@@ -30,7 +30,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Sidebar, SidebarNav, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarNav } from '@/components/sidebar-nav';
 import { AppLogo } from '@/components/app-logo';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RightSidebar } from '@/components/right-sidebar';
@@ -110,8 +111,8 @@ function AuthForm() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <div className="flex gap-2 w-full">
-                <Button onClick={form.handleSubmit(handleSignIn)} className="flex-1">Sign In</Button>
-                <Button onClick={form.handleSubmit(handleSignUp)} variant="secondary" className="flex-1">Sign Up</Button>
+                <Button type="button" onClick={form.handleSubmit(handleSignIn)} className="flex-1">Sign In</Button>
+                <Button type="button" onClick={form.handleSubmit(handleSignUp)} variant="secondary" className="flex-1">Sign Up</Button>
             </div>
 
             <Separator className="my-2" />

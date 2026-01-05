@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Flame, PlusSquare, Bell, User, RadioTower } from 'lucide-react';
+import { Home, Flame, PlusSquare, Bell, User, RadioTower, LogIn } from 'lucide-react';
 import { AppLogo } from '@/components/app-logo';
 import {
   SidebarContent,
@@ -11,9 +11,11 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
+import { useUser } from '@/firebase';
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { user } = useUser();
 
   const menuItems = [
     { href: '/', label: 'Home', icon: Home },
@@ -21,8 +23,11 @@ export function SidebarNav() {
     { href: '#', label: 'Discover', icon: Flame },
     { href: '#', label: 'Create', icon: PlusSquare },
     { href: '#', label: 'Notifications', icon: Bell },
-    { href: '#', label: 'Profile', icon: User },
   ];
+  
+  const authMenuItem = user
+    ? { href: '/profile', label: 'Profile', icon: User }
+    : { href: '/profile', label: 'Login', icon: LogIn };
 
   return (
     <>
@@ -31,7 +36,7 @@ export function SidebarNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {menuItems.map((item) => (
+          {[...menuItems, authMenuItem].map((item) => (
             <SidebarMenuItem key={item.label}>
               <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
                 <Link href={item.href}>

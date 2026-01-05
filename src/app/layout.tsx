@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { WindowView } from '@/components/window-view';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Jannu Live',
@@ -30,9 +31,11 @@ export default function RootLayout({
         <meta name="theme-color" content="#E91E63" />
       </head>
       <body className="font-body antialiased">
-        <WindowView>
-          {children}
-        </WindowView>
+        <FirebaseClientProvider>
+          <WindowView>
+            {children}
+          </WindowView>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

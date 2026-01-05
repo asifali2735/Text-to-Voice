@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import {
   initiateEmailSignUp,
   initiateEmailSignIn,
@@ -38,6 +38,7 @@ import { RightSidebar } from '@/components/right-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User as UserIcon, LogOut } from 'lucide-react';
+import { collection, doc } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -100,7 +101,7 @@ function AuthForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Password</-form>
                   <FormControl>
                     <Input type="password" placeholder="••••••" {...field} />
                   </FormControl>
@@ -130,6 +131,7 @@ function AuthForm() {
 function UserProfile() {
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const handleSignOut = () => {
     if (auth) {
@@ -138,6 +140,12 @@ function UserProfile() {
   };
 
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : '?';
+
+  const followersQuery = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'followers') : null, [firestore, user]);
+  const followingQuery = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'following') : null, [firestore, user]);
+
+  const { data: followers } = useCollection(followersQuery);
+  const { data: following } = useCollection(followingQuery);
 
   return (
     <Card className="w-full max-w-md">
@@ -151,11 +159,11 @@ function UserProfile() {
         
         <div className="flex gap-4 pt-4">
             <div className="text-center">
-                <p className="font-bold text-lg">0</p>
+                <p className="font-bold text-lg">{following?.length ?? 0}</p>
                 <p className="text-sm text-muted-foreground">Following</p>
             </div>
             <div className="text-center">
-                <p className="font-bold text-lg">0</p>
+                <p className="font-bold text-lg">{followers?.length ?? 0}</p>
                 <p className="text-sm text-muted-foreground">Followers</p>
             </div>
             <div className="text-center">

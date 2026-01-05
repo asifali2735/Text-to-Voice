@@ -2,25 +2,24 @@ rules_version = '2';
 
 /**
  * @file firestore.rules
- * @description Security rules for the Jannu Connect application.
+ * @description Security rules for the Jannu Live application.
  *
  * ## Core Philosophy
  * This ruleset enforces a security model that balances public content discovery with strict user data privacy.
  * Publicly accessible data like user profiles and posts are readable by anyone, but writable only by the content owner.
- * Private data, such as notifications and direct messages, is strictly confined to the authorized user(s).
+ * Private data, such as notifications and relationships (follow/like), is strictly controlled.
  *
  * ## Data Structure
- * The structure uses a combination of top-level collections for global, discoverable content (e.g., /posts, /trendingTopics)
- * and user-nested collections for private, owner-specific data (e.g., /users/{userId}/notifications). This structural
+ * The structure uses a combination of top-level collections for global, discoverable content (e.g., /posts)
+ * and user-nested subcollections for user-centric data (e.g., /users/{userId}/followers). This structural
  * segregation provides a clear and secure separation of concerns.
  *
  * ## Key Security Decisions
- * - User Listing Disabled: It is not possible to query the entire list of users in the `/users` collection.
+ * - User Listing Disabled: To protect privacy, it is not possible for a client to query the entire list of users in the `/users` collection.
  * - Public Reads, Owner Writes: Core content like posts and user profiles are publicly readable to facilitate a social experience,
- *   but all write operations (create, update, delete) are strictly limited to the document's owner.
- * - Strict Privacy for Communications: Direct Messages are only accessible to the sender and recipient. List operations are disabled
- *   on the /directMessages collection to prevent data leakage. Notifications are strictly private to the user they belong to.
- * - Read-Only Data: Collections like `/trendingTopics` are treated as read-only for clients, assuming they are populated by a trusted backend process.
+ *   but all write operations (create, update, delete) are strictly limited to the document's owner or related entities.
+ * - Relationship Integrity: Follow, Like, and Save actions are controlled. A user can only initiate actions for themselves (e.g., you can't make someone else follow another person).
+ * - Strict Privacy for Communications: Notifications are strictly private to the user they belong to.
  *
  * ## Denormalization for Authorization
  * To create simpler and more performant rules, data required for authorization is denormalized directly onto the documents being secured.
@@ -28,9 +27,8 @@ rules_version = '2';
  * `get()` calls in security rules, ensuring that authorization decisions are fast and efficient.
  *
  * ## Structural Segregation
- * Data with different security needs are stored in separate collections. For example, private user notifications are stored in a
- * user-specific subcollection (`/users/{userId}/notifications`), completely separate from public content like `/posts`. This pattern is
- * inherently more secure and performant for list operations than using a single collection with a boolean flag.
+ * Data with different security needs are stored in separate collections or subcollections. For example, private user notifications
+ * are stored in a user-specific subcollection (`/users/{userId}/notifications`), completely separate from public content like `/posts`.
  */
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -83,6 +81,14 @@ service cloud.firestore {
     function isSelfAssignedAuthor() {
       return isSignedIn() && request.auth.uid == request.resource.data.authorId;
     }
+    
+    /**
+     * @description Verifies the userId on a new document matches the creator's UID.
+     * Used for create rules on actions like Likes or Saves.
+     */
+    function isSelfAssignedUser() {
+      return isSignedIn() && request.auth.uid == request.resource.data.userId;
+    }
 
     /**
      * @description Ensures the authorId field is not changed during an update.
@@ -90,62 +96,73 @@ service cloud.firestore {
     function authorIdIsImmutable() {
       return request.resource.data.authorId == resource.data.authorId;
     }
-
+    
     /**
-     * @description Checks if a user is either the sender or recipient of a direct message.
+     * @description Ensures the userId field is not changed during an update.
      */
-    function isParticipant(messageData) {
-      return isSignedIn() && (request.auth.uid == messageData.senderId || request.auth.uid == messageData.recipientId);
+    function userIdIsImmutable() {
+      return request.resource.data.userId == resource.data.userId;
     }
 
-
     // ----------------------------------------
-    // User Profiles
+    // User Profiles & Subcollections
     // ----------------------------------------
 
     /**
      * @description Rules for user profile documents.
      * @path /users/{userId}
-     * @allow A user creating their own profile document: (create) auth.uid == userId.
-     * @allow Any user reading another user's profile: (get) auth != null.
-     * @deny An authenticated user trying to edit another user's profile: (update) auth.uid != userId.
-     * @deny Listing all users in the application: (list) at /users.
+     * @allow A user can create their own profile.
+     * @allow Any user can read a profile.
+     * @deny Listing all users.
      * @principle Enforces self-creation and ownership for writes, while allowing public reads for social features.
      */
     match /users/{userId} {
       allow get: if true;
-      allow list: if false;
+      allow list: if false; // Privacy: prevent scraping all users.
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
 
-        /**
-         * @description Rules for a user's private post collection.
-         * @path /users/{userId}/posts/{postId}
-         * @allow The user listing their own posts: (list) auth.uid == userId.
-         * @deny Another user trying to read from this private collection: (get) auth.uid != userId.
-         * @principle Restricts access to a user's own data tree. This collection is for a user to easily query their own content.
-         */
-        match /posts/{postId} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.authorId == userId;
-          allow update: if isExistingOwner(userId) && authorIdIsImmutable();
-          allow delete: if isExistingOwner(userId);
-        }
+      /**
+       * @description A user's followers list. Anyone can read, only functions can write (for atomicity).
+       * @path /users/{userId}/followers/{followerId}
+       */
+      match /followers/{followerId} {
+        allow get, list: if true;
+        allow create, update, delete: if false; // Managed by backend triggers
+      }
 
-        /**
-         * @description Rules for a user's private notification collection.
-         * @path /users/{userId}/notifications/{notificationId}
-         * @allow The user reading their own notification: (get) auth.uid == userId.
-         * @deny Any other user attempting to read or write notifications: (get, list, create, update, delete) auth.uid != userId.
-         * @principle Enforces strict data privacy by confining access to the owner of the data tree.
-         */
-        match /notifications/{notificationId} {
+      /**
+       * @description A user's following list. Anyone can read, only functions can write (for atomicity).
+       * @path /users/{userId}/following/{followingId}
+       */
+      match /following/{followingId} {
+        allow get, list: if true;
+        allow create, update, delete: if false; // Managed by backend triggers
+      }
+      
+      /**
+       * @description A user's saved/collected posts. Only the owner can view and modify.
+       * @path /users/{userId}/saved_posts/{postId}
+       */
+      match /saved_posts/{postId} {
           allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.userId == userId;
-          allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-          allow delete: if isExistingOwner(userId);
-        }
+          allow create: if isOwner(userId) && isSelfAssignedUser();
+          allow delete: if isExistingOwner(userId) && resource.data.userId == request.auth.uid;
+          allow update: if false;
+      }
+
+      /**
+       * @description Rules for a user's private notification collection.
+       * @path /users/{userId}/notifications/{notificationId}
+       * @principle Enforces strict data privacy by confining access to the owner of the data tree.
+       */
+      match /notifications/{notificationId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId; // Or from a trusted backend
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
     }
 
     // ----------------------------------------
@@ -155,10 +172,7 @@ service cloud.firestore {
     /**
      * @description Rules for the global posts collection.
      * @path /posts/{postId}
-     * @allow Any user, signed-in or not, reading a post: (get, list) true.
-     * @allow A signed-in user creating a new post for themselves: (create) auth.uid == request.resource.data.authorId.
-     * @deny A user trying to update a post they did not author: (update) auth.uid != resource.data.authorId.
-     * @principle Public Read with Owner-Only Writes. This allows content discovery while protecting author integrity.
+     * @principle Public Read with Owner-Only Writes. Allows content discovery while protecting author integrity.
      */
     match /posts/{postId} {
       allow get, list: if true;
@@ -166,50 +180,29 @@ service cloud.firestore {
       allow update: if isExistingDoc() && isAuthorOf(resource.data) && authorIdIsImmutable();
       allow delete: if isExistingDoc() && isAuthorOf(resource.data);
 
-        /**
-         * @description Rules for comments on a post.
-         * @path /posts/{postId}/comments/{commentId}
-         * @allow Any user reading comments on a post: (get, list) true.
-         * @allow A signed-in user creating a new comment: (create) auth != null.
-         * @deny A user trying to delete another user's comment: (delete) auth.uid != resource.data.authorId.
-         * @principle Public Read with Owner-Only Writes. Allows open discussion while letting authors control their own comments.
-         */
-        match /comments/{commentId} {
-          allow get, list: if true;
-          allow create: if isSelfAssignedAuthor() && request.resource.data.postId == postId;
-          allow update: if isExistingDoc() && isAuthorOf(resource.data) && authorIdIsImmutable() && request.resource.data.postId == resource.data.postId;
-          allow delete: if isExistingDoc() && isAuthorOf(resource.data);
-        }
-    }
-
-    /**
-     * @description Rules for trending topics.
-     * @path /trendingTopics/{trendingTopicId}
-     * @allow Any client reading the list of trending topics: (get, list) true.
-     * @deny Any client attempting to write to this collection: (create, update, delete) false.
-     * @principle Enforces that this collection is read-only from the client-side, assuming it's managed by a backend process.
-     */
-    match /trendingTopics/{trendingTopicId} {
-      allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    /**
-     * @description Rules for direct messages between users.
-     * @path /directMessages/{directMessageId}
-     * @allow A sender or recipient reading a message they are part of: (get) auth.uid is in [senderId, recipientId].
-     * @deny A user trying to read a message they are not part of: (get) auth.uid is not in [senderId, recipientId].
-     * @deny Any user listing the direct messages collection to prevent data leaks: (list) false.
-     * @principle Enforces access for a closed set of collaborators (sender and recipient). Disallows list for maximum privacy.
-     */
-    match /directMessages/{directMessageId} {
-      allow get: if isExistingDoc() && isParticipant(resource.data);
-      allow list: if false;
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
-      allow update: if false;
-      allow delete: if isExistingDoc() && isParticipant(resource.data);
+      /**
+       * @description Rules for comments on a post.
+       * @path /posts/{postId}/comments/{commentId}
+       * @principle Public Read with Owner-Only Writes.
+       */
+      match /comments/{commentId} {
+        allow get, list: if true;
+        allow create: if isSelfAssignedAuthor() && request.resource.data.postId == postId;
+        allow update: if isExistingDoc() && isAuthorOf(resource.data) && authorIdIsImmutable() && request.resource.data.postId == resource.data.postId;
+        allow delete: if isExistingDoc() && isAuthorOf(resource.data);
+      }
+      
+      /**
+       * @description Rules for likes on a post.
+       * @path /posts/{postId}/likes/{userId}
+       * @principle Any signed-in user can like/unlike a post.
+       */
+      match /likes/{userId} {
+        allow get, list: if true;
+        allow create: if isOwner(userId) && isSelfAssignedUser();
+        allow delete: if isOwner(userId) && isExistingDoc();
+        allow update: if false;
+      }
     }
   }
 }

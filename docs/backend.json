@@ -28,26 +28,17 @@
           "description": "URL of the user's profile photo.",
           "format": "uri"
         },
-        "followerIds": {
-          "type": "array",
-          "description": "References to Users who follow this User. (Relationship: User N:N User (Followers))",
-          "items": {
-            "type": "string"
-          }
+        "followerCount": {
+          "type": "number",
+          "description": "The number of users following this user."
         },
-        "followingIds": {
-          "type": "array",
-          "description": "References to Users this User is following. (Relationship: User N:N User (Following))",
-          "items": {
-            "type": "string"
-          }
+        "followingCount": {
+          "type": "number",
+          "description": "The number of users this user is following."
         },
-        "likedPostIds": {
-          "type": "array",
-          "description": "References to Posts liked by this User. (Relationship: User N:N Post (Likes))",
-          "items": {
-            "type": "string"
-          }
+        "postCount": {
+          "type": "number",
+          "description": "The number of posts created by this user."
         }
       },
       "required": [
@@ -84,34 +75,21 @@
           "description": "Date and time when the post was created.",
           "format": "date-time"
         },
-        "likeIds": {
-          "type": "array",
-          "description": "References to Users who liked this Post. (Relationship: User N:N Post (Likes))",
-          "items": {
-            "type": "string"
-          }
+        "likeCount": {
+          "type": "number",
+          "description": "The number of likes on the post."
         },
-        "commentIds": {
-          "type": "array",
-          "description": "References to Comments on this Post. (Relationship: Post 1:N Comment)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "saveIds": {
-          "type": "array",
-          "description": "References to Users who saved this Post. (Relationship: User N:N Post (Saves))",
-          "items": {
-            "type": "string"
-          }
+        "commentCount": {
+          "type": "number",
+          "description": "The number of comments on the post."
         },
         "shareCount": {
           "type": "number",
           "description": "Number of times the post has been shared."
         },
-        "hashtagIds": {
+        "hashtags": {
           "type": "array",
-          "description": "References to Hashtags associated with this Post. (Relationship: Post N:N Hashtag)",
+          "description": "A list of hashtag strings associated with the post.",
           "items": {
             "type": "string"
           }
@@ -161,33 +139,71 @@
         "timestamp"
       ]
     },
-    "Hashtag": {
+    "Follow": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Hashtag",
+      "title": "Follow",
+      "description": "Represents a follow relationship between two users.",
       "type": "object",
-      "description": "Represents a hashtag used in posts.",
       "properties": {
-        "id": {
+        "followerId": {
           "type": "string",
-          "description": "Unique identifier for the hashtag.",
-          "format": "uuid"
+          "description": "The ID of the user who is following."
         },
-        "name": {
+        "followingId": {
           "type": "string",
-          "description": "The text of the hashtag (e.g., 'travelphotography')."
+          "description": "The ID of the user who is being followed."
         },
-        "postIds": {
-          "type": "array",
-          "description": "References to Posts using this Hashtag. (Relationship: Post N:N Hashtag)",
-          "items": {
-            "type": "string"
-          }
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the follow action occurred."
         }
       },
-      "required": [
-        "id",
-        "name"
-      ]
+      "required": ["followerId", "followingId", "timestamp"]
+    },
+    "Like": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Like",
+      "description": "Represents a user liking a post.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who liked the post."
+        },
+        "postId": {
+          "type": "string",
+          "description": "The ID of the post that was liked."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the like action occurred."
+        }
+      },
+      "required": ["userId", "postId", "timestamp"]
+    },
+    "Save": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Save",
+      "description": "Represents a user saving (collecting) a post.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who saved the post."
+        },
+        "postId": {
+          "type": "string",
+          "description": "The ID of the post that was saved."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the save action occurred."
+        }
+      },
+      "required": ["userId", "postId", "timestamp"]
     },
     "Notification": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -240,85 +256,6 @@
         "timestamp",
         "isRead"
       ]
-    },
-    "DirectMessage": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DirectMessage",
-      "type": "object",
-      "description": "Represents a direct message between two users.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the direct message.",
-          "format": "uuid"
-        },
-        "senderId": {
-          "type": "string",
-          "description": "Reference to the User who sent the message. (Relationship: User 1:N DirectMessage (Sender))"
-        },
-        "recipientId": {
-          "type": "string",
-          "description": "Reference to the User who received the message. (Relationship: User 1:N DirectMessage (Recipient))"
-        },
-        "text": {
-          "type": "string",
-          "description": "The text content of the message."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Date and time when the message was sent.",
-          "format": "date-time"
-        },
-        "mediaUrl": {
-          "type": "string",
-          "description": "URL of the media attached to the message (image, video, voice).",
-          "format": "uri"
-        }
-      },
-      "required": [
-        "id",
-        "senderId",
-        "recipientId",
-        "text",
-        "timestamp"
-      ]
-    },
-    "TrendingTopic": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "TrendingTopic",
-      "type": "object",
-      "description": "Represents a trending topic or hashtag.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the trending topic.",
-          "format": "uuid"
-        },
-        "name": {
-          "type": "string",
-          "description": "The name or title of the trending topic."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the trending topic."
-        },
-        "postCount": {
-          "type": "number",
-          "description": "The number of posts associated with the trending topic."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Date and time when the trending topic was identified.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "description",
-        "postCount",
-        "timestamp"
-      ]
     }
   },
   "auth": {
@@ -333,35 +270,32 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles. Includes 'followerIds', 'followingIds', and 'likedPostIds' arrays for tracking relationships and preferences.",
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "Stores user profiles. Includes denormalized counts for followers, following, and posts.",
+          "params": [{ "name": "userId", "description": "The unique identifier of the user." }]
+        }
+      },
+      {
+        "path": "/users/{userId}/followers/{followerId}",
+        "definition": {
+          "entityName": "Follow",
+          "schema": { "$ref": "#/backend/entities/Follow" },
+          "description": "Subcollection to list who is following the user specified by {userId}.",
           "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
+            { "name": "userId", "description": "The user being followed." },
+            { "name": "followerId", "description": "The user who is following." }
           ]
         }
       },
       {
-        "path": "/users/{userId}/posts/{postId}",
+        "path": "/users/{userId}/following/{followingId}",
         "definition": {
-          "entityName": "Post",
-          "schema": {
-            "$ref": "#/backend/entities/Post"
-          },
-          "description": "Stores posts created by a specific user.  Duplicated from /posts to allow easy querying of a user's own posts.",
+          "entityName": "Follow",
+          "schema": { "$ref": "#/backend/entities/Follow" },
+          "description": "Subcollection to list who the user specified by {userId} is following.",
           "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "postId",
-              "description": "The unique identifier of the post."
-            }
+            { "name": "userId", "description": "The user who is following." },
+            { "name": "followingId", "description": "The user being followed." }
           ]
         }
       },
@@ -369,51 +303,44 @@
         "path": "/posts/{postId}",
         "definition": {
           "entityName": "Post",
-          "schema": {
-            "$ref": "#/backend/entities/Post"
-          },
-          "description": "Stores all posts in the application. Includes denormalized 'authorId' for feed generation. Enables listing all posts.",
-          "params": [
-            {
-              "name": "postId",
-              "description": "The unique identifier of the post."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Post" },
+          "description": "Main collection for all posts. Data is denormalized for efficient reads.",
+          "params": [{ "name": "postId", "description": "The unique identifier of the post." }]
         }
       },
       {
         "path": "/posts/{postId}/comments/{commentId}",
         "definition": {
           "entityName": "Comment",
-          "schema": {
-            "$ref": "#/backend/entities/Comment"
-          },
-          "description": "Stores comments for a specific post. Includes denormalized 'authorId' for authorization independence.",
+          "schema": { "$ref": "#/backend/entities/Comment" },
+          "description": "Stores comments for a specific post.",
           "params": [
-            {
-              "name": "postId",
-              "description": "The unique identifier of the post."
-            },
-            {
-              "name": "commentId",
-              "description": "The unique identifier of the comment."
-            }
+            { "name": "postId", "description": "The unique identifier of the post." },
+            { "name": "commentId", "description": "The unique identifier of the comment." }
           ]
         }
       },
       {
-        "path": "/trendingTopics/{trendingTopicId}",
+        "path": "/posts/{postId}/likes/{userId}",
         "definition": {
-          "entityName": "TrendingTopic",
-          "schema": {
-            "$ref": "#/backend/entities/TrendingTopic"
-          },
-          "description": "Stores trending topics in the application.",
+          "entityName": "Like",
+          "schema": { "$ref": "#/backend/entities/Like" },
+          "description": "Stores likes for a specific post. The document ID is the user's ID.",
           "params": [
-            {
-              "name": "trendingTopicId",
-              "description": "The unique identifier of the trending topic."
-            }
+            { "name": "postId", "description": "The unique identifier of the post." },
+            { "name": "userId", "description": "The user who liked the post." }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/saved_posts/{postId}",
+        "definition": {
+          "entityName": "Save",
+          "schema": { "$ref": "#/backend/entities/Save" },
+          "description": "Stores posts saved (collected) by a specific user.",
+          "params": [
+            { "name": "userId", "description": "The user who saved the post." },
+            { "name": "postId", "description": "The ID of the saved post." }
           ]
         }
       },
@@ -421,39 +348,15 @@
         "path": "/users/{userId}/notifications/{notificationId}",
         "definition": {
           "entityName": "Notification",
-          "schema": {
-            "$ref": "#/backend/entities/Notification"
-          },
+          "schema": { "$ref": "#/backend/entities/Notification" },
           "description": "Stores notifications for a specific user.",
           "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "notificationId",
-              "description": "The unique identifier of the notification."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/directMessages/{directMessageId}",
-        "definition": {
-          "entityName": "DirectMessage",
-          "schema": {
-            "$ref": "#/backend/entities/DirectMessage"
-          },
-          "description": "Stores direct messages between users. Each message contains 'senderId' and 'recipientId' for access control.",
-          "params": [
-            {
-              "name": "directMessageId",
-              "description": "The unique identifier of the direct message."
-            }
+            { "name": "userId", "description": "The unique identifier of the user." },
+            { "name": "notificationId", "description": "The unique identifier of the notification." }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure prioritizes authorization independence and efficient data retrieval for the Jannu Connect application. User-generated content (posts, comments) is organized under user-specific collections to simplify ownership-based security rules.  Denormalization is employed to avoid complex `get()` calls in security rules, particularly for features like following and likes.  The structure uses structural segregation, ensuring each collection has a homogeneous security posture. The design explicitly avoids custom claims and relies solely on `request.auth.uid` for authentication, enhancing security and simplifying the rule set.\n\n**Authorization Independence & QAPs:**\n*   **Posts:** Posts are stored in a top-level `/posts` collection, but also duplicated under `/users/{userId}/posts/{postId}` to facilitate easy querying of a user's own posts and simplifies ownership-based security rules. The top level `/posts` collection contains a denormalized `authorId` field to allow listing all posts and enables feed generation via backend functions. This setup satisfies QAPs (rules are not filters) for list operations.\n*   **Comments:** Comments are stored as a subcollection of posts (`/posts/{postId}/comments/{commentId}`). Each comment contains a denormalized `authorId` field copied from the user who created the comment. This allows simpler security rules.\n*   **Likes/Saves:** Likes and Saves are managed through arrays within the `User` and `Post` documents (`likedPostIds`, `saveIds`). While this avoids a separate collection, it's important to limit array sizes to avoid exceeding Firestore document size limits.\n*   **Followers/Following:** The `User` document contains `followerIds` and `followingIds` arrays. Again, it is important to limit array sizes.\n*   **Notifications:** Notifications are stored in a `/users/{userId}/notifications/{notificationId}` collection, ensuring that only the user can access their notifications. This path-based ownership simplifies security rules and enhances privacy.\n*   **Direct Messages:** Direct messages are stored in a top level `/directMessages/{directMessageId}` collection.  Each message stores `senderId` and `recipientId`, which can be used in rules to restrict read access.\n\nThis structure ensures Authorization Independence by denormalizing the necessary data (authorId, members) into each document, eliminating the need for `get()` calls in security rules. This simplifies rule logic and enables atomic operations.\n\n**Trending Topics** are stored in a `/trendingTopics` collection. Since trending topics are application-wide, they are not tied to a specific user.\n"
+    "reasoning": "The data model is designed for a scalable social media application, prioritizing efficient queries and clear security rule implementation. It uses a combination of top-level collections for global entities (like `/posts`) and nested subcollections for user-specific data (like `/users/{userId}/followers`). This allows for path-based security rules, which are more performant and secure. \n\n- **User Follow Graph:** Instead of arrays in the User document (which have size limitations), we use `/followers` and `/following` subcollections under each user. This is a standard, scalable pattern. A `Follow` document is created in two places: `/users/{userId}/followers/{followerId}` and `/users/{followerId}/following/{userId}`. This duplication allows easy querying of both 'who follows me?' and 'who am I following?' without complex and slow queries. Counts (`followerCount`, `followingCount`) are denormalized on the `User` document and will be updated via backend functions (triggers) for performance.\n\n- **Likes and Saves:** Similarly, `likes` on a post and `saves` by a user are stored in subcollections (`/posts/{postId}/likes/{userId}` and `/users/{userId}/saved_posts/{postId}`). This avoids unbounded arrays and makes it easy to check if a specific user has liked or saved a post. Counts (`likeCount`) are denormalized on the `Post` document.\n\n- **Authorization Independence:** The structure ensures authorization can be determined from the document path and its contents alone, without needing `get()` calls in security rules. For example, to write to `/users/{userId}/**`, the rule just needs to check `request.auth.uid == userId`."
   }
 }

@@ -145,12 +145,27 @@ function UserProfile() {
           {user?.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || user.email || 'User'} data-ai-hint="profile photo" />}
           <AvatarFallback className="text-4xl">{userInitial}</AvatarFallback>
         </Avatar>
-        <CardTitle className="font-headline">{user?.displayName || 'Welcome'}</CardTitle>
-        <CardDescription>{user?.email}</CardDescription>
-         {user?.isAnonymous && <CardDescription className="italic">Guest User</CardDescription>}
+        <CardTitle className="font-headline">{user?.displayName || user?.email || 'User'}</CardTitle>
+        <CardDescription>{user?.isAnonymous ? 'Guest User' : 'Welcome to Jannu Live!'}</CardDescription>
+        
+        <div className="flex gap-4 pt-4">
+            <div className="text-center">
+                <p className="font-bold text-lg">0</p>
+                <p className="text-sm text-muted-foreground">Following</p>
+            </div>
+            <div className="text-center">
+                <p className="font-bold text-lg">0</p>
+                <p className="text-sm text-muted-foreground">Followers</p>
+            </div>
+            <div className="text-center">
+                <p className="font-bold text-lg">0</p>
+                <p className="text-sm text-muted-foreground">Likes</p>
+            </div>
+        </div>
+
       </CardHeader>
       <CardContent className="text-center">
-        <p className="text-muted-foreground">More profile details coming soon!</p>
+        <p className="text-muted-foreground">Your posts and liked videos will appear here.</p>
       </CardContent>
       <CardFooter className="flex-col gap-2">
         <Button variant="outline" className="w-full">Edit Profile</Button>
@@ -174,6 +189,11 @@ export default function ProfilePage() {
             <Skeleton className="h-24 w-24 rounded-full" />
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex justify-center gap-8">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-20" />
           </div>
           <Skeleton className="h-10 w-full" />
            <Skeleton className="h-10 w-full" />

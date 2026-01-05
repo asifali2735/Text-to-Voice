@@ -6,7 +6,7 @@ export function AppLogo() {
       <div className="p-2 bg-primary rounded-lg">
         <HeartPulse className="h-6 w-6 text-primary-foreground" />
       </div>
-      <h1 className="text-2xl font-headline font-bold text-primary group-data-[state=collapsed]:hidden">Jannu Connect</h1>
+      <h1 className="text-2xl font-headline font-bold text-primary group-data-[state=collapsed]:hidden">Jannu Live</h1>
     </div>
   );
 }

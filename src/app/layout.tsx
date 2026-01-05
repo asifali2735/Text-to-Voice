@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Jannu Connect',
+  title: 'Jannu Live',
   description: 'A vibrant social app for sharing short videos.',
 };
 

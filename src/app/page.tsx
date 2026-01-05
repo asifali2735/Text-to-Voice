@@ -44,7 +44,7 @@ export default async function Home() {
               <div className="sm:hidden">
                 <AppLogo />
               </div>
-               <h1 className="hidden sm:block text-2xl font-headline font-bold text-primary">Jannu Connect</h1>
+               <h1 className="hidden sm:block text-2xl font-headline font-bold text-primary">Jannu Live</h1>
             </div>
           </header>
           <main className="flex-1">

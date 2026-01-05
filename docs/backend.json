@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user in the Jannu Connect application.",
+      "description": "Represents a user account in the Jannu Connect application.",
       "properties": {
         "id": {
           "type": "string",
@@ -13,78 +13,115 @@
         },
         "username": {
           "type": "string",
-          "description": "The username of the user."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the user.",
-          "format": "email"
-        },
-        "profilePictureUrl": {
-          "type": "string",
-          "description": "URL to the user's profile picture.",
-          "format": "uri"
+          "description": "The user's chosen username."
         },
         "bio": {
           "type": "string",
-          "description": "A short biography of the user."
+          "description": "A brief biography or description of the user."
         },
-        "createdAt": {
+        "location": {
           "type": "string",
-          "description": "Timestamp indicating when the user account was created.",
-          "format": "date-time"
+          "description": "The user's location (e.g., city, country)."
+        },
+        "profilePhotoUrl": {
+          "type": "string",
+          "description": "URL of the user's profile photo.",
+          "format": "uri"
+        },
+        "followerIds": {
+          "type": "array",
+          "description": "References to Users who follow this User. (Relationship: User N:N User (Followers))",
+          "items": {
+            "type": "string"
+          }
+        },
+        "followingIds": {
+          "type": "array",
+          "description": "References to Users this User is following. (Relationship: User N:N User (Following))",
+          "items": {
+            "type": "string"
+          }
+        },
+        "likedPostIds": {
+          "type": "array",
+          "description": "References to Posts liked by this User. (Relationship: User N:N Post (Likes))",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
         "id",
-        "username",
-        "email",
-        "createdAt"
+        "username"
       ]
     },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a post (video or text) in the Jannu Connect application.",
+      "description": "Represents a post created by a user.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the post.",
           "format": "uuid"
         },
-        "userId": {
+        "authorId": {
           "type": "string",
           "description": "Reference to the User who created the post. (Relationship: User 1:N Post)"
         },
         "contentUrl": {
           "type": "string",
-          "description": "URL to the video or image content of the post.",
+          "description": "URL of the post's content (video or image).",
           "format": "uri"
         },
-        "text": {
+        "caption": {
           "type": "string",
-          "description": "Text description accompanying the post."
+          "description": "The caption or description associated with the post."
         },
-        "createdAt": {
+        "timestamp": {
           "type": "string",
-          "description": "Timestamp indicating when the post was created.",
+          "description": "Date and time when the post was created.",
           "format": "date-time"
         },
-        "likeCount": {
-          "type": "number",
-          "description": "The number of likes the post has received."
+        "likeIds": {
+          "type": "array",
+          "description": "References to Users who liked this Post. (Relationship: User N:N Post (Likes))",
+          "items": {
+            "type": "string"
+          }
         },
-        "commentCount": {
+        "commentIds": {
+          "type": "array",
+          "description": "References to Comments on this Post. (Relationship: Post 1:N Comment)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "saveIds": {
+          "type": "array",
+          "description": "References to Users who saved this Post. (Relationship: User N:N Post (Saves))",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shareCount": {
           "type": "number",
-          "description": "The number of comments the post has received."
+          "description": "Number of times the post has been shared."
+        },
+        "hashtagIds": {
+          "type": "array",
+          "description": "References to Hashtags associated with this Post. (Relationship: Post N:N Hashtag)",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
         "id",
-        "userId",
+        "authorId",
         "contentUrl",
-        "createdAt"
+        "timestamp"
       ]
     },
     "Comment": {
@@ -102,166 +139,61 @@
           "type": "string",
           "description": "Reference to the Post the comment belongs to. (Relationship: Post 1:N Comment)"
         },
-        "userId": {
+        "authorId": {
           "type": "string",
-          "description": "Reference to the User who created the comment. (Relationship: User 1:N Comment)"
+          "description": "Reference to the User who wrote the comment. (Relationship: User 1:N Comment)"
         },
         "text": {
           "type": "string",
           "description": "The text content of the comment."
         },
-        "createdAt": {
+        "timestamp": {
           "type": "string",
-          "description": "Timestamp indicating when the comment was created.",
+          "description": "Date and time when the comment was created.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
         "postId",
-        "userId",
+        "authorId",
         "text",
-        "createdAt"
+        "timestamp"
       ]
     },
-    "Follower": {
+    "Hashtag": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Follower",
+      "title": "Hashtag",
       "type": "object",
-      "description": "Represents the follower-followee relationship between users.",
+      "description": "Represents a hashtag used in posts.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the follower relationship.",
-          "format": "uuid"
-        },
-        "followerId": {
-          "type": "string",
-          "description": "Reference to the User who is following. (Relationship: User 1:N Follower as Follower)"
-        },
-        "followeeId": {
-          "type": "string",
-          "description": "Reference to the User being followed. (Relationship: User 1:N Follower as Followee)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the follow relationship was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "followerId",
-        "followeeId",
-        "createdAt"
-      ]
-    },
-    "Like": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Like",
-      "type": "object",
-      "description": "Represents a like on a post.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the like.",
-          "format": "uuid"
-        },
-        "postId": {
-          "type": "string",
-          "description": "Reference to the Post that was liked. (Relationship: Post 1:N Like)"
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User who liked the post. (Relationship: User 1:N Like)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the like was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "postId",
-        "userId",
-        "createdAt"
-      ]
-    },
-    "TrendingTopic": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "TrendingTopic",
-      "type": "object",
-      "description": "Represents trending topics and hashtags.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the trending topic.",
+          "description": "Unique identifier for the hashtag.",
           "format": "uuid"
         },
         "name": {
           "type": "string",
-          "description": "The name of the trending topic or hashtag."
+          "description": "The text of the hashtag (e.g., 'travelphotography')."
         },
-        "postCount": {
-          "type": "number",
-          "description": "The number of posts associated with this trending topic."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the trending topic was created.",
-          "format": "date-time"
+        "postIds": {
+          "type": "array",
+          "description": "References to Posts using this Hashtag. (Relationship: Post N:N Hashtag)",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
         "id",
-        "name",
-        "postCount",
-        "createdAt"
-      ]
-    },
-    "Recommendation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Recommendation",
-      "type": "object",
-      "description": "Represents content recommendations for users.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the recommendation.",
-          "format": "uuid"
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User who is receiving the recommendation. (Relationship: User 1:N Recommendation)"
-        },
-        "postId": {
-          "type": "string",
-          "description": "Reference to the Post being recommended. (Relationship: Post 1:N Recommendation)"
-        },
-        "reason": {
-          "type": "string",
-          "description": "The reason why this content was recommended (e.g., 'Similar to followed users', 'Based on recent activity')."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the recommendation was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "postId",
-        "reason",
-        "createdAt"
+        "name"
       ]
     },
     "Notification": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Notification",
       "type": "object",
-      "description": "Represents a push notification sent to a user.",
+      "description": "Represents a notification for a user.",
       "properties": {
         "id": {
           "type": "string",
@@ -270,24 +202,34 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to the User who is receiving the notification. (Relationship: User 1:N Notification)"
+          "description": "Reference to the User the notification is for. (Relationship: User 1:N Notification)"
         },
         "type": {
           "type": "string",
-          "description": "The type of notification (e.g., 'new_follower', 'like', 'comment')."
+          "description": "Type of notification (e.g., 'like', 'comment', 'follow')."
         },
         "content": {
           "type": "string",
           "description": "The content of the notification message."
         },
-        "createdAt": {
+        "timestamp": {
           "type": "string",
-          "description": "Timestamp indicating when the notification was created.",
+          "description": "Date and time when the notification was created.",
           "format": "date-time"
         },
         "isRead": {
           "type": "boolean",
           "description": "Indicates whether the notification has been read by the user."
+        },
+        "relatedPostId": {
+          "type": "string",
+          "description": "Reference to the Post related to the notification, if applicable. (Relationship: Post 1:N Notification)",
+          "format": "uuid"
+        },
+        "relatedUserId": {
+          "type": "string",
+          "description": "Reference to the User related to the notification, if applicable. (Relationship: User 1:N Notification)",
+          "format": "uuid"
         }
       },
       "required": [
@@ -295,8 +237,87 @@
         "userId",
         "type",
         "content",
-        "createdAt",
+        "timestamp",
         "isRead"
+      ]
+    },
+    "DirectMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DirectMessage",
+      "type": "object",
+      "description": "Represents a direct message between two users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the direct message.",
+          "format": "uuid"
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to the User who sent the message. (Relationship: User 1:N DirectMessage (Sender))"
+        },
+        "recipientId": {
+          "type": "string",
+          "description": "Reference to the User who received the message. (Relationship: User 1:N DirectMessage (Recipient))"
+        },
+        "text": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Date and time when the message was sent.",
+          "format": "date-time"
+        },
+        "mediaUrl": {
+          "type": "string",
+          "description": "URL of the media attached to the message (image, video, voice).",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "senderId",
+        "recipientId",
+        "text",
+        "timestamp"
+      ]
+    },
+    "TrendingTopic": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TrendingTopic",
+      "type": "object",
+      "description": "Represents a trending topic or hashtag.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the trending topic.",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name or title of the trending topic."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the trending topic."
+        },
+        "postCount": {
+          "type": "number",
+          "description": "The number of posts associated with the trending topic."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Date and time when the trending topic was identified.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "postCount",
+        "timestamp"
       ]
     }
   },
@@ -315,7 +336,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profile information. User can only modify their own profile.",
+          "description": "Stores user profiles. Includes 'followerIds', 'followingIds', and 'likedPostIds' arrays for tracking relationships and preferences.",
           "params": [
             {
               "name": "userId",
@@ -331,11 +352,11 @@
           "schema": {
             "$ref": "#/backend/entities/Post"
           },
-          "description": "Stores posts created by a specific user. Only the user can create, update, or delete their own posts.",
+          "description": "Stores posts created by a specific user.  Duplicated from /posts to allow easy querying of a user's own posts.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user who created the post."
+              "description": "The unique identifier of the user."
             },
             {
               "name": "postId",
@@ -345,17 +366,33 @@
         }
       },
       {
-        "path": "/users/{userId}/comments/{commentId}",
+        "path": "/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": {
+            "$ref": "#/backend/entities/Post"
+          },
+          "description": "Stores all posts in the application. Includes denormalized 'authorId' for feed generation. Enables listing all posts.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The unique identifier of the post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/posts/{postId}/comments/{commentId}",
         "definition": {
           "entityName": "Comment",
           "schema": {
             "$ref": "#/backend/entities/Comment"
           },
-          "description": "Stores comments created by a specific user. Only the user can create, update, or delete their own comments.",
+          "description": "Stores comments for a specific post. Includes denormalized 'authorId' for authorization independence.",
           "params": [
             {
-              "name": "userId",
-              "description": "The unique identifier of the user who created the comment."
+              "name": "postId",
+              "description": "The unique identifier of the post."
             },
             {
               "name": "commentId",
@@ -365,41 +402,17 @@
         }
       },
       {
-        "path": "/followers/{followerId}_{followeeId}",
+        "path": "/trendingTopics/{trendingTopicId}",
         "definition": {
-          "entityName": "Follower",
+          "entityName": "TrendingTopic",
           "schema": {
-            "$ref": "#/backend/entities/Follower"
+            "$ref": "#/backend/entities/TrendingTopic"
           },
-          "description": "Stores follower-followee relationships. The document ID is a composite key of 'followerId_followeeId'.",
+          "description": "Stores trending topics in the application.",
           "params": [
             {
-              "name": "followerId",
-              "description": "The unique identifier of the user who is following."
-            },
-            {
-              "name": "followeeId",
-              "description": "The unique identifier of the user being followed."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/recommendations/{recommendationId}",
-        "definition": {
-          "entityName": "Recommendation",
-          "schema": {
-            "$ref": "#/backend/entities/Recommendation"
-          },
-          "description": "Stores content recommendations for a specific user.  Only the system can create these.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user receiving the recommendation."
-            },
-            {
-              "name": "recommendationId",
-              "description": "The unique identifier of the recommendation."
+              "name": "trendingTopicId",
+              "description": "The unique identifier of the trending topic."
             }
           ]
         }
@@ -411,11 +424,11 @@
           "schema": {
             "$ref": "#/backend/entities/Notification"
           },
-          "description": "Stores notifications for a specific user. Only the system can create these, and only the user can mark them as read.",
+          "description": "Stores notifications for a specific user.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user receiving the notification."
+              "description": "The unique identifier of the user."
             },
             {
               "name": "notificationId",
@@ -425,38 +438,22 @@
         }
       },
       {
-        "path": "/trending_topics/{trendingTopicId}",
+        "path": "/directMessages/{directMessageId}",
         "definition": {
-          "entityName": "TrendingTopic",
+          "entityName": "DirectMessage",
           "schema": {
-            "$ref": "#/backend/entities/TrendingTopic"
+            "$ref": "#/backend/entities/DirectMessage"
           },
-          "description": "Stores trending topics and hashtags.  System managed.",
+          "description": "Stores direct messages between users. Each message contains 'senderId' and 'recipientId' for access control.",
           "params": [
             {
-              "name": "trendingTopicId",
-              "description": "The unique identifier of the trending topic."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "adminRole",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Documents in this collection indicate admin roles. The existence of a document for a userId grants admin privileges.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
+              "name": "directMessageId",
+              "description": "The unique identifier of the direct message."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the Jannu Connect application's core features, including user profiles, posts, comments, social interactions (following), trending topics, content recommendations, and notifications. The structure prioritizes authorization independence and efficient data retrieval. \n\n**Authorization Independence & DBAC:** User roles are managed through path-based ownership.  Specifically user-owned data such as posts, comments, recommendations, and notifications live under `/users/{userId}`. Following is maintained in the `/followers` collection. A user is implicitly an admin by the existence of a document under `/roles_admin/{userId}`.\n\n**Structural Segregation:** User-generated content (posts and comments) are separated based on ownership into `/users/{userId}/posts` and `/users/{userId}/comments`. Recommendations are stored in `/users/{userId}/recommendations`. Notifications are stored in `/users/{userId}/notifications`. This approach simplifies security rules by ensuring all documents within a collection share the same access control requirements.\n\n**Access Modeling:**\n*   **Private User Data:** User profiles are stored in `/users/{userId}`, ensuring only the user can modify their profile.\n*   **User-Owned Content:** Posts, comments, recommendations, and notifications are stored as subcollections under `/users/{userId}`, adhering to path-based ownership. This simplifies security rules and ensures only the user can manage their content.\n*   **Collaborative Data:** The follower-followee relationship is managed in the `/followers` collection which centralizes the security rules for followers.\n*   **Global Roles (DBAC):** Admin roles are determined by the existence of a document in `/roles_admin/{userId}`. This simplifies admin role management.\n\n**QAPs Support:**\n*   `list` operations are secured by path-based ownership. For example, listing posts for a specific user is done via `/users/{userId}/posts`. The rule will check that `request.auth.uid == userId`.\n*   The `/followers` collection supports listing followers and followees."
+    "reasoning": "The Firestore structure prioritizes authorization independence and efficient data retrieval for the Jannu Connect application. User-generated content (posts, comments) is organized under user-specific collections to simplify ownership-based security rules.  Denormalization is employed to avoid complex `get()` calls in security rules, particularly for features like following and likes.  The structure uses structural segregation, ensuring each collection has a homogeneous security posture. The design explicitly avoids custom claims and relies solely on `request.auth.uid` for authentication, enhancing security and simplifying the rule set.\n\n**Authorization Independence & QAPs:**\n*   **Posts:** Posts are stored in a top-level `/posts` collection, but also duplicated under `/users/{userId}/posts/{postId}` to facilitate easy querying of a user's own posts and simplifies ownership-based security rules. The top level `/posts` collection contains a denormalized `authorId` field to allow listing all posts and enables feed generation via backend functions. This setup satisfies QAPs (rules are not filters) for list operations.\n*   **Comments:** Comments are stored as a subcollection of posts (`/posts/{postId}/comments/{commentId}`). Each comment contains a denormalized `authorId` field copied from the user who created the comment. This allows simpler security rules.\n*   **Likes/Saves:** Likes and Saves are managed through arrays within the `User` and `Post` documents (`likedPostIds`, `saveIds`). While this avoids a separate collection, it's important to limit array sizes to avoid exceeding Firestore document size limits.\n*   **Followers/Following:** The `User` document contains `followerIds` and `followingIds` arrays. Again, it is important to limit array sizes.\n*   **Notifications:** Notifications are stored in a `/users/{userId}/notifications/{notificationId}` collection, ensuring that only the user can access their notifications. This path-based ownership simplifies security rules and enhances privacy.\n*   **Direct Messages:** Direct messages are stored in a top level `/directMessages/{directMessageId}` collection.  Each message stores `senderId` and `recipientId`, which can be used in rules to restrict read access.\n\nThis structure ensures Authorization Independence by denormalizing the necessary data (authorId, members) into each document, eliminating the need for `get()` calls in security rules. This simplifies rule logic and enables atomic operations.\n\n**Trending Topics** are stored in a `/trendingTopics` collection. Since trending topics are application-wide, they are not tied to a specific user.\n"
   }
 }

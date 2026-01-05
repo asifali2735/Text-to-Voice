@@ -1,223 +1,215 @@
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model combined with role-based access for administrators.
- * Most user-specific data (profiles, posts, notifications) is nested under the `/users/{userId}` path,
- * allowing for clear, path-based authorization. Publicly readable data is explicitly opened up, while sensitive
- * operations are restricted to document owners or administrators. The default posture is to deny access.
- *
- * Data Structure: The data is organized into top-level collections for global entities (`users`, `followers`, `trending_topics`)
- * and user-specific subcollections (`posts`, `comments`, `notifications`, `recommendations`) nested under `/users/{userId}`.
- * This structure simplifies security by colocating data with its ownership context. Administrator roles are managed in a
- * dedicated `/roles_admin` collection, where the existence of a document signifies admin privileges for that user ID.
- *
- * Key Security Decisions:
- * - User Directory Protection: Listing the entire `/users` collection is explicitly disallowed to prevent scraping of user data.
- *   Implementing user search or "find friends" functionality should be done via a secure backend endpoint (e.g., a Cloud Function).
- * - System-Managed Collections: Collections like `trending_topics`, `recommendations`, and `notifications` are designated as
- *   system-managed. Regular users have read-only or limited update access, while all creation and deletion is restricted to admins.
- * - Ownership Enforcement: All user-generated content requires the user to be authenticated. Write operations (create, update, delete)
- *   are strictly limited to the user who owns the document. This is enforced by comparing `request.auth.uid` with an owner ID
- *   in the document path or data.
- * - Public vs. Private: User profiles and posts are readable by any signed-in user to facilitate social interaction. Private data
- *   like notifications and recommendations are readable only by the owner.
- *
- * Denormalization for Authorization: This ruleset relies on the data structure where user-specific data is nested under paths
- * containing the user's ID (e.g., `/users/{userId}/posts/{postId}`). This avoids costly `get()` calls to other documents for
- * basic ownership checks. Administrator roles are checked with a single, efficient `exists()` call to the `/roles_admin` collection.
- *
- * Structural Segregation: User-specific, private data like `notifications` and `recommendations` are stored in separate
- * subcollections under the user's document. This is more secure and performant than mixing public and private data in a single
- * collection with a visibility flag.
- */
 rules_version = '2';
+
+/**
+ * @file firestore.rules
+ * @description Security rules for the Jannu Connect application.
+ *
+ * ## Core Philosophy
+ * This ruleset enforces a security model that balances public content discovery with strict user data privacy.
+ * Publicly accessible data like user profiles and posts are readable by anyone, but writable only by the content owner.
+ * Private data, such as notifications and direct messages, is strictly confined to the authorized user(s).
+ *
+ * ## Data Structure
+ * The structure uses a combination of top-level collections for global, discoverable content (e.g., /posts, /trendingTopics)
+ * and user-nested collections for private, owner-specific data (e.g., /users/{userId}/notifications). This structural
+ * segregation provides a clear and secure separation of concerns.
+ *
+ * ## Key Security Decisions
+ * - User Listing Disabled: It is not possible to query the entire list of users in the `/users` collection.
+ * - Public Reads, Owner Writes: Core content like posts and user profiles are publicly readable to facilitate a social experience,
+ *   but all write operations (create, update, delete) are strictly limited to the document's owner.
+ * - Strict Privacy for Communications: Direct Messages are only accessible to the sender and recipient. List operations are disabled
+ *   on the /directMessages collection to prevent data leakage. Notifications are strictly private to the user they belong to.
+ * - Read-Only Data: Collections like `/trendingTopics` are treated as read-only for clients, assuming they are populated by a trusted backend process.
+ *
+ * ## Denormalization for Authorization
+ * To create simpler and more performant rules, data required for authorization is denormalized directly onto the documents being secured.
+ * For example, `Post` and `Comment` documents contain an `authorId` field. This avoids slow, costly, and sometimes impossible cross-document
+ * `get()` calls in security rules, ensuring that authorization decisions are fast and efficient.
+ *
+ * ## Structural Segregation
+ * Data with different security needs are stored in separate collections. For example, private user notifications are stored in a
+ * user-specific subcollection (`/users/{userId}/notifications`), completely separate from public content like `/posts`. This pattern is
+ * inherently more secure and performant for list operations than using a single collection with a boolean flag.
+ */
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ----------------------------------------------------------------------
+    // ----------------------------------------
     // Helper Functions
-    // ----------------------------------------------------------------------
+    // ----------------------------------------
 
     /**
-     * Checks if a user is authenticated.
+     * @description Checks if the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Checks if the currently authenticated user's ID matches the provided userId.
-     * This is the primary function for enforcing document ownership.
+     * @description Checks if the authenticated user's UID matches the provided userId.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-
+    /**
+     * @description Verifies that the document being accessed already exists.
+     * CRITICAL for all update and delete operations.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
 
     /**
-     * Checks for ownership on an existing document. Used for update and delete
-     * operations to prevent acting on non-existent data.
+     * @description Verifies ownership for an existing document. Used for update/delete.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && isExistingDoc();
     }
 
     /**
-     * Checks if the currently authenticated user is an administrator.
-     * An admin is defined by the existence of a document for their UID
-     * in the /roles_admin collection.
+     * @description Verifies the author of a resource (e.g., a Post or Comment).
+     * Used for update/delete rules on existing documents.
      */
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    function isAuthorOf(docData) {
+      return isSignedIn() && request.auth.uid == docData.authorId;
     }
 
     /**
-     * Validates that the owner ID within a document cannot be changed after creation.
+     * @description Verifies the authorId on a new document matches the creator's UID.
+     * Used for create rules.
      */
-    function isOwnerFieldImmutable(fieldName) {
-      return request.resource.data[fieldName] == resource.data[fieldName];
+    function isSelfAssignedAuthor() {
+      return isSignedIn() && request.auth.uid == request.resource.data.authorId;
     }
-
-    // ----------------------------------------------------------------------
-    // Admin Roles
-    // ----------------------------------------------------------------------
 
     /**
-     * @description Manages admin roles. Only other admins can view or modify this collection.
-     * @path /roles_admin/{userId}
-     * @allow (get) An admin can check if another user is an admin.
-     * @deny (get) A non-admin user cannot read the admin list.
-     * @principle Restricts sensitive role management to authorized administrators.
+     * @description Ensures the authorId field is not changed during an update.
      */
-    match /roles_admin/{userId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+    function authorIdIsImmutable() {
+      return request.resource.data.authorId == resource.data.authorId;
     }
 
-    // ----------------------------------------------------------------------
+    /**
+     * @description Checks if a user is either the sender or recipient of a direct message.
+     */
+    function isParticipant(messageData) {
+      return isSignedIn() && (request.auth.uid == messageData.senderId || request.auth.uid == messageData.recipientId);
+    }
+
+
+    // ----------------------------------------
     // User Profiles
-    // ----------------------------------------------------------------------
+    // ----------------------------------------
 
     /**
-     * @description Manages user profile documents.
+     * @description Rules for user profile documents.
      * @path /users/{userId}
-     * @allow (create) A new user can create their own profile document.
-     * @allow (get) Any signed-in user can view another user's profile.
-     * @deny (list) Listing all users is forbidden to prevent data scraping.
-     * @deny (update) A user cannot update another user's profile.
-     * @principle A user has full control over their own profile, which is otherwise read-only to others.
+     * @allow A user creating their own profile document: (create) auth.uid == userId.
+     * @allow Any user reading another user's profile: (get) auth != null.
+     * @deny An authenticated user trying to edit another user's profile: (update) auth.uid != userId.
+     * @deny Listing all users in the application: (list) at /users.
+     * @principle Enforces self-creation and ownership for writes, while allowing public reads for social features.
      */
     match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if false; // Deny listing all users to prevent scraping
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && isOwnerFieldImmutable('id');
-      allow delete: if isExistingOwner(userId);
-    }
-
-    // ----------------------------------------------------------------------
-    // User-Owned Subcollections
-    // ----------------------------------------------------------------------
-
-    /**
-     * @description Manages posts created by a user.
-     * @path /users/{userId}/posts/{postId}
-     * @allow (get) Any signed-in user can read a user's posts.
-     * @allow (create) A user can create a post under their own profile.
-     * @deny (update) A user cannot update a post belonging to someone else.
-     * @principle Enforces document ownership for writes, while allowing public reads for social features.
-     */
-    match /users/{userId}/posts/{postId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && isOwnerFieldImmutable('userId');
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Manages comments created by a user.
-     * @path /users/{userId}/comments/{commentId}
-     * @allow (get) Any signed-in user can read comments.
-     * @allow (create) A user can create a comment under their own ID.
-     * @deny (delete) A user cannot delete someone else's comment.
-     * @principle Enforces document ownership for writes, while allowing public reads.
-     */
-    match /users/{userId}/comments/{commentId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && isOwnerFieldImmutable('userId');
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Stores content recommendations for a user. These are read-only for the user.
-     * @path /users/{userId}/recommendations/{recommendationId}
-     * @allow (get, list) A user can read their own recommendations.
-     * @deny (create) Only admins (the system) can create recommendations.
-     * @deny (get) A user cannot read another user's recommendations.
-     * @principle Segregates private, system-generated data to be readable only by its owner.
-     */
-    match /users/{userId}/recommendations/{recommendationId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isOwner(userId) || isAdmin();
-      allow create: if isAdmin();
-      allow update: if false; // Recommendations are immutable
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Stores notifications for a user. The user can read and update them (e.g., mark as read).
-     * @path /users/{userId}/notifications/{notificationId}
-     * @allow (update) A user can update a notification, e.g., to mark it as read.
-     * @deny (create) Only admins (the system) can create notifications.
-     * @deny (get) A user cannot read another user's notifications.
-     * @principle Allows a user to modify state on their private, system-generated data.
-     */
-    match /users/{userId}/notifications/{notificationId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isOwner(userId) || isAdmin();
-      allow create: if isAdmin();
-      allow update: if isExistingOwner(userId);
-      allow delete: if isAdmin();
-    }
-
-    // ----------------------------------------------------------------------
-    // Global Collections
-    // ----------------------------------------------------------------------
-
-    /**
-     * @description Manages follower relationships. The document ID is a composite key.
-     * @path /followers/{followId}
-     * @allow (create) A user can create a 'Follower' document to follow someone else.
-     * @allow (delete) A user can delete their own 'Follower' document to unfollow.
-     * @deny (create) A user cannot make another user follow someone.
-     * @principle A user can only initiate or terminate their own 'follow' actions.
-     */
-    match /followers/{followId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.followerId == request.auth.uid;
-      allow update: if false; // Follow relationships cannot be changed, only re-created.
-      allow delete: if resource != null && resource.data.followerId == request.auth.uid;
-    }
-
-    /**
-     * @description Manages trending topics. This data is public and read-only for users.
-     * @path /trending_topics/{trendingTopicId}
-     * @allow (get, list) Any client, authenticated or not, can read trending topics.
-     * @deny (create) Only admins (the system) can create or modify trending topics.
-     * @principle Provides public, read-only access to global application data.
-     */
-    match /trending_topics/{trendingTopicId} {
       allow get: if true;
-      allow list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Rules for a user's private post collection.
+         * @path /users/{userId}/posts/{postId}
+         * @allow The user listing their own posts: (list) auth.uid == userId.
+         * @deny Another user trying to read from this private collection: (get) auth.uid != userId.
+         * @principle Restricts access to a user's own data tree. This collection is for a user to easily query their own content.
+         */
+        match /posts/{postId} {
+          allow get, list: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.authorId == userId;
+          allow update: if isExistingOwner(userId) && authorIdIsImmutable();
+          allow delete: if isExistingOwner(userId);
+        }
+
+        /**
+         * @description Rules for a user's private notification collection.
+         * @path /users/{userId}/notifications/{notificationId}
+         * @allow The user reading their own notification: (get) auth.uid == userId.
+         * @deny Any other user attempting to read or write notifications: (get, list, create, update, delete) auth.uid != userId.
+         * @principle Enforces strict data privacy by confining access to the owner of the data tree.
+         */
+        match /notifications/{notificationId} {
+          allow get, list: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+          allow delete: if isExistingOwner(userId);
+        }
+    }
+
+    // ----------------------------------------
+    // Global Content Collections
+    // ----------------------------------------
+
+    /**
+     * @description Rules for the global posts collection.
+     * @path /posts/{postId}
+     * @allow Any user, signed-in or not, reading a post: (get, list) true.
+     * @allow A signed-in user creating a new post for themselves: (create) auth.uid == request.resource.data.authorId.
+     * @deny A user trying to update a post they did not author: (update) auth.uid != resource.data.authorId.
+     * @principle Public Read with Owner-Only Writes. This allows content discovery while protecting author integrity.
+     */
+    match /posts/{postId} {
+      allow get, list: if true;
+      allow create: if isSelfAssignedAuthor();
+      allow update: if isExistingDoc() && isAuthorOf(resource.data) && authorIdIsImmutable();
+      allow delete: if isExistingDoc() && isAuthorOf(resource.data);
+
+        /**
+         * @description Rules for comments on a post.
+         * @path /posts/{postId}/comments/{commentId}
+         * @allow Any user reading comments on a post: (get, list) true.
+         * @allow A signed-in user creating a new comment: (create) auth != null.
+         * @deny A user trying to delete another user's comment: (delete) auth.uid != resource.data.authorId.
+         * @principle Public Read with Owner-Only Writes. Allows open discussion while letting authors control their own comments.
+         */
+        match /comments/{commentId} {
+          allow get, list: if true;
+          allow create: if isSelfAssignedAuthor() && request.resource.data.postId == postId;
+          allow update: if isExistingDoc() && isAuthorOf(resource.data) && authorIdIsImmutable() && request.resource.data.postId == resource.data.postId;
+          allow delete: if isExistingDoc() && isAuthorOf(resource.data);
+        }
+    }
+
+    /**
+     * @description Rules for trending topics.
+     * @path /trendingTopics/{trendingTopicId}
+     * @allow Any client reading the list of trending topics: (get, list) true.
+     * @deny Any client attempting to write to this collection: (create, update, delete) false.
+     * @principle Enforces that this collection is read-only from the client-side, assuming it's managed by a backend process.
+     */
+    match /trendingTopics/{trendingTopicId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Rules for direct messages between users.
+     * @path /directMessages/{directMessageId}
+     * @allow A sender or recipient reading a message they are part of: (get) auth.uid is in [senderId, recipientId].
+     * @deny A user trying to read a message they are not part of: (get) auth.uid is not in [senderId, recipientId].
+     * @deny Any user listing the direct messages collection to prevent data leaks: (list) false.
+     * @principle Enforces access for a closed set of collaborators (sender and recipient). Disallows list for maximum privacy.
+     */
+    match /directMessages/{directMessageId} {
+      allow get: if isExistingDoc() && isParticipant(resource.data);
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
+      allow update: if false;
+      allow delete: if isExistingDoc() && isParticipant(resource.data);
     }
   }
 }

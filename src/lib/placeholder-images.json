@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "avatar-1",
+      "description": "User avatar 1",
+      "imageUrl": "https://images.unsplash.com/photo-1619895862022-09114b41f16f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwcm9maWxlJTIwcGhvdG98ZW58MHx8fHwxNzY3NjE0NjU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "profile photo"
+    },
+    {
+      "id": "avatar-2",
+      "description": "User avatar 2",
+      "imageUrl": "https://images.unsplash.com/photo-1580489944761-15a19d654956?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwcm9maWxlJTIwcGhvdG98ZW58MHx8fHwxNzY3NjE0NjU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "profile photo"
+    },
+    {
+      "id": "avatar-3",
+      "description": "User avatar 3",
+      "imageUrl": "https://images.unsplash.com/photo-1619895862022-09114b41f16f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwcm9maWxlJTIwcGhvdG98ZW58MHx8fHwxNzY3NjE0NjU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "profile photo"
+    },
+    {
+      "id": "video-thumb-1",
+      "description": "Video thumbnail 1",
+      "imageUrl": "https://images.unsplash.com/photo-1698324820272-9caf40fc78dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxkYW5jaW5nJTIwcGVyc29ufGVufDB8fHx8MTc2NzUxOTI1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dancing person"
+    },
+    {
+      "id": "video-thumb-2",
+      "description": "Video thumbnail 2",
+      "imageUrl": "https://images.unsplash.com/photo-1544214036-5aaeb9e32d11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjaXR5JTIwc2t5bGluZXxlbnwwfHx8fDE3Njc1MjA1MzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "city skyline"
+    },
+    {
+      "id": "video-thumb-3",
+      "description": "Video thumbnail 3",
+      "imageUrl": "https://images.unsplash.com/photo-1561389248-231c46a75a97?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjdXRlJTIwY2F0fGVufDB8fHx8MTc2NzUyNDUxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cute cat"
+    },
+    {
+      "id": "video-thumb-4",
+      "description": "Video thumbnail 4",
+      "imageUrl": "https://images.unsplash.com/photo-1657875858787-e2e9a3e6758c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmb29kJTIwY29va2luZ3xlbnwwfHx8fDE3Njc2MDUxNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "food cooking"
+    },
+    {
+      "id": "app-logo",
+      "description": "Jannu Connect App Logo",
+      "imageUrl": "https://images.unsplash.com/photo-1755435140567-3c9df5ceffa1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMGxvZ298ZW58MHx8fHwxNzY3NjE2NzIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract logo"
+    }
+  ]
 }

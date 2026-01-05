@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { WindowView } from '@/components/window-view';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
   title: 'Jannu Live',
@@ -32,9 +33,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <WindowView>
-            {children}
-          </WindowView>
+          <SidebarProvider>
+            <WindowView>
+              {children}
+            </WindowView>
+          </SidebarProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>

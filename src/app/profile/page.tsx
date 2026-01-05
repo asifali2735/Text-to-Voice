@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { SidebarProvider, Sidebar, SidebarNav, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarNav, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppLogo } from '@/components/app-logo';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RightSidebar } from '@/components/right-sidebar';
@@ -207,7 +207,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar collapsible="icon">
         <SidebarNav />
       </Sidebar>
@@ -234,6 +234,6 @@ export default function ProfilePage() {
         </SidebarInset>
         <RightSidebar />
       </div>
-    </SidebarProvider>
+    </>
   );
 }

@@ -3,7 +3,7 @@ import { SidebarNav } from '@/components/sidebar-nav';
 import { RightSidebar } from '@/components/right-sidebar';
 import { VideoFeed } from '@/components/video-feed';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SidebarProvider, SidebarInset, Sidebar, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarInset, Sidebar, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppLogo } from '@/components/app-logo';
 
 export default async function Home() {
@@ -32,7 +32,7 @@ export default async function Home() {
   }
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar collapsible="icon">
         <SidebarNav />
       </Sidebar>
@@ -57,6 +57,6 @@ export default async function Home() {
         </SidebarInset>
         <RightSidebar />
       </div>
-    </SidebarProvider>
+    </>
   );
 }

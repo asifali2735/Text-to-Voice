@@ -1,4 +1,5 @@
-import { SidebarProvider, Sidebar, SidebarNav, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarNav } from '@/components/sidebar-nav';
 import { AppLogo } from '@/components/app-logo';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RightSidebar } from '@/components/right-sidebar';
@@ -7,7 +8,7 @@ import { RadioTower } from 'lucide-react';
 
 export default function LivePage() {
   return (
-    <SidebarProvider>
+    <>
       <Sidebar collapsible="icon">
         <SidebarNav />
       </Sidebar>
@@ -44,6 +45,6 @@ export default function LivePage() {
         </SidebarInset>
         <RightSidebar />
       </div>
-    </SidebarProvider>
+    </>
   );
 }

@@ -1,0 +1,21 @@
+{
+  "name": "Jannu Live",
+  "short_name": "Jannu Live",
+  "description": "A vibrant social app for sharing short videos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCE4EC",
+  "theme_color": "#E91E63",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -11,7 +11,7 @@ export function VideoFeed({ recommendations }: { recommendations: RecommendConte
   }
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-8 max-w-md mx-auto">
       {recommendations.map((rec, index) => (
         <VideoCard key={`${rec.videoTitle}-${index}`} recommendation={rec} />
       ))}

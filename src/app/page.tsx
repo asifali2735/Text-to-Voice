@@ -20,7 +20,7 @@ export default async function Home() {
     });
     recommendations = result.recommendations;
   } catch (error) {
-    console.error("Failed to fetch content recommendations:", error);
+    // console.error("Failed to fetch content recommendations:", error);
   }
 
   if (!recommendations || recommendations.length === 0) {
@@ -48,8 +48,8 @@ export default async function Home() {
             </div>
           </header>
           <main className="flex-1">
-            <ScrollArea className="h-[calc(100vh-57px)] lg:h-screen">
-              <div className="container mx-auto max-w-md px-2 py-8 sm:px-4">
+            <ScrollArea className="h-[calc(100svh-57px)]">
+              <div className="px-2 py-8 sm:px-4">
                 <VideoFeed recommendations={recommendations} />
               </div>
             </ScrollArea>

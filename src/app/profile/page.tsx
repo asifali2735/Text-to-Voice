@@ -101,7 +101,7 @@ function AuthForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</-form>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="••••••" {...field} />
                   </FormControl>
@@ -118,7 +118,7 @@ function AuthForm() {
 
             <Separator className="my-2" />
             
-            <Button onClick={handleAnonymousSignIn} variant="outline" className="w-full">
+            <Button type="button" onClick={handleAnonymousSignIn} variant="outline" className="w-full">
               Continue as Guest
             </Button>
           </CardFooter>

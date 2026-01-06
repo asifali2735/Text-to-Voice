@@ -34,7 +34,6 @@ import { Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { AppLogo } from '@/components/app-logo';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RightSidebar } from '@/components/right-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User as UserIcon, LogOut } from 'lucide-react';
@@ -174,7 +173,7 @@ function UserProfile() {
 
       </CardHeader>
       <CardContent className="text-center">
-        <p className="text-muted-foreground">Your posts and liked videos will appear here.</p>
+        <p className="text-muted-foreground">Your saved audio will appear here.</p>
       </CardContent>
       <CardFooter className="flex-col gap-2">
         <Button variant="outline" className="w-full">Edit Profile</Button>
@@ -241,7 +240,6 @@ export default function ProfilePage() {
             </ScrollArea>
           </main>
         </SidebarInset>
-        <RightSidebar />
       </div>
     </>
   );

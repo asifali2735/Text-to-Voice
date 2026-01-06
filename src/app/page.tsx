@@ -1,109 +1,113 @@
-'use client';
+import Image from "next/image";
 
-import { useState } from 'react';
-import { Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { SidebarNav } from '@/components/sidebar-nav';
-import { AppLogo } from '@/components/app-logo';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Mic } from 'lucide-react';
-import { textToSpeech, TextToSpeechOutput } from '@/ai/flows/text-to-speech';
-import { Skeleton } from '@/components/ui/skeleton';
-
-function AIStudio() {
-  const [text, setText] = useState('Hello, welcome to Jannu Live! This is an AI generated voice over.');
-  const [audioResult, setAudioResult] = useState<TextToSpeechOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleGenerateVoice = async () => {
-    setIsLoading(true);
-    setError(null);
-    setAudioResult(null);
-    try {
-      const result = await textToSpeech(text);
-      setAudioResult(result);
-    } catch (e) {
-      console.error(e);
-      setError('Failed to generate audio. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+export default function Home() {
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-headline">
-          <Mic className="text-primary" />
-          AI Voice Over Studio
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="voice-text">Text to convert</Label>
-          <Textarea
-            id="voice-text"
-            placeholder="Enter the text you want to convert to speech..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={6}
-          />
+    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
+        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
+          Get started by editing&nbsp;
+          <code className="font-mono font-bold">src/app/page.tsx</code>
+        </p>
+        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
+          <a
+            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
+            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            By{' '}
+            <Image
+              src="/vercel.svg"
+              alt="Vercel Logo"
+              className="dark:invert"
+              width={100}
+              height={24}
+              priority
+            />
+          </a>
         </div>
-      </CardContent>
-      <CardFooter className="flex-col gap-4">
-        <Button onClick={handleGenerateVoice} disabled={isLoading || !text} className="w-full">
-          {isLoading ? 'Generating Audio...' : 'Generate Voice Over'}
-        </Button>
-        {isLoading && (
-            <div className="w-full space-y-2">
-                <Skeleton className="h-12 w-full" />
-            </div>
-        )}
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {audioResult?.media && (
-          <div className="w-full">
-            <h3 className="font-semibold mb-2">Result:</h3>
-            <audio controls src={audioResult.media} className="w-full">
-              Your browser does not support the audio element.
-            </audio>
-          </div>
-        )}
-      </CardFooter>
-    </Card>
-  );
-}
-
-
-export default function StudioPage() {
-  return (
-    <>
-      <Sidebar collapsible="icon">
-        <SidebarNav />
-      </Sidebar>
-      <div className="flex flex-1">
-        <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-[57px] items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md">
-            <SidebarTrigger />
-            <div className="flex-1 text-center sm:text-left">
-              <div className="sm:hidden">
-                <AppLogo />
-              </div>
-               <h1 className="hidden sm:block text-2xl font-headline font-bold text-primary">AI Studio</h1>
-            </div>
-          </header>
-          <main className="flex-1">
-            <ScrollArea className="h-[calc(100svh-57px)]">
-              <div className="p-4 sm:p-6">
-                <AIStudio />
-              </div>
-            </ScrollArea>
-          </main>
-        </SidebarInset>
       </div>
-    </>
+
+      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:to-lime-900 after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
+        <Image
+          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
+          src="/next.svg"
+          alt="Next.js Logo"
+          width={180}
+          height={37}
+          priority
+        />
+      </div>
+
+      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
+        <a
+          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <h2 className={'mb-3 text-2xl font-semibold'}>
+            Docs{' '}
+            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+              -&gt;
+            </span>
+          </h2>
+          <p className={'m-0 max-w-[30ch] text-sm opacity-50'}>
+            Find in-depth information about Next.js features and API.
+          </p>
+        </a>
+
+        <a
+          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <h2 className={'mb-3 text-2xl font-semibold'}>
+            Learn{' '}
+            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+              -&gt;
+            </span>
+          </h2>
+          <p className={'m-0 max-w-[30ch] text-sm opacity-50'}>
+            Learn about Next.js in an interactive course with&nbsp;quizzes!
+          </p>
+        </a>
+
+        <a
+          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <h2 className={'mb-3 text-2xl font-semibold'}>
+            Templates{' '}
+            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+              -&gt;
+            </span>
+          </h2>
+          <p className={'m-0 max-w-[30ch] text-sm opacity-50'}>
+            Explore starter templates for Next.js.
+          </p>
+        </a>
+
+        <a
+          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <h2 className={'mb-3 text-2xl font-semibold'}>
+            Deploy{' '}
+            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+              -&gt;
+            </span>
+          </h2>
+          <p className={'m-0 max-w-[30ch] text-sm opacity-50'}>
+            Instantly deploy your Next.js site to a shareable URL with Vercel.
+          </p>
+        </a>
+      </div>
+    </main>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { textToSpeech } from '@/ai/flows/speech';
 
 type ModuleName = 'speech-highlight' | 'image' | 'video' | 'edit' | 'voiceover' | 'code' | 'music';
 
@@ -14,6 +15,7 @@ export default function NeoStudioPage() {
     const [loading, setLoading] = useState(true);
     const [activeModule, setActiveModule] = useState<ModuleName>('speech-highlight');
     const [outputs, setOutputs] = useState<OutputMessage[]>([]);
+    const [isGenerating, setIsGenerating] = useState(false);
     const appContainerRef = useRef<HTMLDivElement>(null);
     const cyberLoaderRef = useRef<HTMLDivElement>(null);
     const matrixCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -174,11 +176,37 @@ export default function NeoStudioPage() {
         }, 1000);
     };
 
-    const downloadVoice = () => {
-        addOutput('Preparing voice download...', 'info');
-        setTimeout(() => {
-            addOutput('Voice downloaded as speech.mp3', 'success');
-        }, 1500);
+    const downloadVoice = async () => {
+        const textInput = document.getElementById('ttsInput') as HTMLTextAreaElement;
+        const text = textInput?.value;
+
+        if (!text || !text.trim()) {
+            addOutput('Please enter text to generate audio for', 'warning');
+            return;
+        }
+
+        setIsGenerating(true);
+        addOutput('Generating AI voice for download...', 'info');
+
+        try {
+            const response = await textToSpeech(text);
+            if (response.media) {
+                const link = document.createElement('a');
+                link.href = response.media;
+                link.download = 'speech.wav';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                addOutput('Voice downloaded as speech.wav', 'success');
+            } else {
+                throw new Error('No audio data received from AI.');
+            }
+        } catch (error: any) {
+            console.error('Error downloading voice:', error);
+            addOutput(`Error: ${error.message || 'Could not generate audio.'}`, 'error');
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const generateImage = () => {
@@ -318,7 +346,9 @@ export default function NeoStudioPage() {
                                         </select>
                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
                                             <button className="neural-btn" onClick={generateSpeech} style={{ padding: '12px' }}><i className="fas fa-play"></i> Generate Speech</button>
-                                            <button className="neural-btn secondary" onClick={downloadVoice} style={{ padding: '12px' }}><i className="fas fa-download"></i> Download</button>
+                                            <button className="neural-btn secondary" onClick={downloadVoice} style={{ padding: '12px' }} disabled={isGenerating}>
+                                                {isGenerating ? <div className="spinner" style={{width: '20px', height: '20px', margin: 0}}></div> : <><i className="fas fa-download"></i> Download</>}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

@@ -140,22 +140,26 @@ export default function NeoStudioPage() {
             const selectedVoiceType = voiceSelect.value;
             
             const voices = speechSynthesis.getVoices();
-            let selectedVoice = voices[0]; // Default voice
+            let selectedVoice: SpeechSynthesisVoice | undefined;
 
             if (selectedVoiceType === 'chinese_female' || selectedVoiceType === 'chinese_male') {
-                const chineseVoice = voices.find(voice => voice.lang.startsWith('zh'));
-                if (chineseVoice) {
-                    selectedVoice = chineseVoice;
-                } else {
+                selectedVoice = voices.find(voice => voice.lang.startsWith('zh'));
+                if (!selectedVoice) {
                     addOutput('No Chinese voice found in your browser.', 'warning');
                     return;
                 }
+            } else if (selectedVoiceType === 'young_boy') {
+                 selectedVoice = voices.find(v => v.name.toLowerCase().includes('child') || v.name.toLowerCase().includes('boy'));
+                 if (!selectedVoice) {
+                    addOutput('No "Young Boy" voice found. Using default.', 'warning');
+                    selectedVoice = voices.find(v => v.lang.startsWith('en'));
+                 }
             } else {
                  const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
                  if (selectedVoiceType === 'natural_male' && englishVoices.length > 1) {
                     selectedVoice = englishVoices.find(v => v.name.toLowerCase().includes('male')) || englishVoices[1] || englishVoices[0];
-                 } else {
-                    selectedVoice = englishVoices[0];
+                 } else { // natural_female or other defaults
+                    selectedVoice = englishVoices.find(v => v.name.toLowerCase().includes('female')) || englishVoices[0];
                  }
             }
              if (selectedVoice) {
@@ -293,6 +297,7 @@ export default function NeoStudioPage() {
                                         <select id="voiceType" style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}>
                                             <option value="natural_female">Natural Female</option>
                                             <option value="natural_male">Natural Male</option>
+                                            <option value="young_boy">Young Boy</option>
                                             <option value="chinese_female">Chinese Female</option>
                                             <option value="chinese_male">Chinese Male</option>
                                             <option value="narrator">Narrator</option>

@@ -19,6 +19,8 @@ export default function NeoStudioPage() {
     const appContainerRef = useRef<HTMLDivElement>(null);
     const cyberLoaderRef = useRef<HTMLDivElement>(null);
     const matrixCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -39,7 +41,19 @@ export default function NeoStudioPage() {
 
         addOutput('All AI modules initialized successfully', 'success', false);
 
-        return () => clearTimeout(timer);
+        // Create a hidden audio element to play the speech
+        const audio = new Audio();
+        audio.hidden = true;
+        document.body.appendChild(audio);
+        audioRef.current = audio;
+
+
+        return () => {
+            clearTimeout(timer);
+            if (audioRef.current) {
+                document.body.removeChild(audioRef.current);
+            }
+        };
     }, []);
 
     const initializeMatrixEffect = () => {
@@ -122,7 +136,24 @@ export default function NeoStudioPage() {
         addOutput(`Switched to ${moduleName.replace('-', ' & ').toUpperCase()} module`, 'info');
     };
 
-    const generateSpeech = () => {
+    const getSelectedVoice = () => {
+        const voiceSelect = document.getElementById('voiceType') as HTMLSelectElement;
+        const selectedVoice = voiceSelect?.value || 'Algenib'; // Default to Algenib
+        const voiceMap: { [key: string]: string } = {
+            natural_female: 'Algenib',
+            natural_male: 'Antares',
+            young_boy: 'Canopus',
+            chinese_female: 'Hadrian',
+            chinese_male: 'Hadrian', // No distinct male Chinese voice in this set
+            narrator: 'Bellatrix',
+            cartoon: 'Izar',
+            robotic: 'Fomalhaut',
+        };
+        return voiceMap[selectedVoice] || 'Algenib';
+    };
+
+
+    const generateAndPlaySpeech = async () => {
         const textInput = document.getElementById('ttsInput') as HTMLTextAreaElement;
         const text = textInput?.value;
 
@@ -131,50 +162,33 @@ export default function NeoStudioPage() {
             return;
         }
 
-        addOutput('Generating speech...', 'info');
+        if (!audioRef.current) {
+            addOutput('Audio player not initialized.', 'error');
+            return;
+        }
+        
+        setIsGenerating(true);
+        addOutput('Generating AI speech...', 'info');
 
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(text);
-            const speedSlider = document.getElementById('speedSlider') as HTMLInputElement;
-            utterance.rate = parseFloat(speedSlider?.value || '1');
-
-            const voiceSelect = document.getElementById('voiceType') as HTMLSelectElement;
-            const selectedVoiceType = voiceSelect.value;
-            
-            const voices = speechSynthesis.getVoices();
-            let selectedVoice: SpeechSynthesisVoice | undefined;
-
-            if (selectedVoiceType === 'chinese_female' || selectedVoiceType === 'chinese_male') {
-                selectedVoice = voices.find(voice => voice.lang.startsWith('zh'));
-                if (!selectedVoice) {
-                    addOutput('No Chinese voice found in your browser.', 'warning');
-                    return;
-                }
-            } else if (selectedVoiceType === 'young_boy') {
-                 selectedVoice = voices.find(v => v.name.toLowerCase().includes('child') || v.name.toLowerCase().includes('boy'));
-                 if (!selectedVoice) {
-                    addOutput('No "Young Boy" voice found. Using default.', 'warning');
-                    selectedVoice = voices.find(v => v.lang.startsWith('en'));
-                 }
+        try {
+            const voice = getSelectedVoice();
+            const response = await textToSpeech({ text, voice });
+            if (response.media) {
+                addOutput('Speech generated. Playing now...', 'success');
+                audioRef.current.src = response.media;
+                audioRef.current.play();
+                audioRef.current.onended = () => addOutput('Playback finished.', 'info');
             } else {
-                 const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
-                 if (selectedVoiceType === 'natural_male' && englishVoices.length > 1) {
-                    selectedVoice = englishVoices.find(v => v.name.toLowerCase().includes('male')) || englishVoices[1] || englishVoices[0];
-                 } else { // natural_female or other defaults
-                    selectedVoice = englishVoices.find(v => v.name.toLowerCase().includes('female')) || englishVoices[0];
-                 }
+                throw new Error('No audio data received from AI.');
             }
-             if (selectedVoice) {
-                utterance.voice = selectedVoice;
-            }
-
-
-            utterance.onstart = () => addOutput('Speech started playing', 'success');
-            utterance.onend = () => addOutput('Speech generation complete', 'success');
-
-            speechSynthesis.speak(utterance);
-        }, 1000);
+        } catch (error: any) {
+            console.error('Error generating speech:', error);
+            addOutput(`Error: ${error.message || 'Could not generate speech.'}`, 'error');
+        } finally {
+            setIsGenerating(false);
+        }
     };
+
 
     const downloadVoice = async () => {
         const textInput = document.getElementById('ttsInput') as HTMLTextAreaElement;
@@ -189,7 +203,8 @@ export default function NeoStudioPage() {
         addOutput('Generating AI voice for download...', 'info');
 
         try {
-            const response = await textToSpeech(text);
+            const voice = getSelectedVoice();
+            const response = await textToSpeech({ text, voice });
             if (response.media) {
                 const link = document.createElement('a');
                 link.href = response.media;
@@ -345,7 +360,9 @@ export default function NeoStudioPage() {
                                             <option>Full Sentence</option>
                                         </select>
                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
-                                            <button className="neural-btn" onClick={generateSpeech} style={{ padding: '12px' }}><i className="fas fa-play"></i> Generate Speech</button>
+                                            <button className="neural-btn" onClick={generateAndPlaySpeech} style={{ padding: '12px' }} disabled={isGenerating}>
+                                                {isGenerating ? <div className="spinner" style={{width: '20px', height: '20px', margin: 0}}></div> : <><i className="fas fa-play"></i> Generate Speech</>}
+                                            </button>
                                             <button className="neural-btn secondary" onClick={downloadVoice} style={{ padding: '12px' }} disabled={isGenerating}>
                                                 {isGenerating ? <div className="spinner" style={{width: '20px', height: '20px', margin: 0}}></div> : <><i className="fas fa-download"></i> Download</>}
                                             </button>

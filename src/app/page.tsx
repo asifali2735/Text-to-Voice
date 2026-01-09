@@ -1,394 +1,356 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-export default function VoiceLabPage() {
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mobileMenuBtnRef = useRef<HTMLButtonElement>(null);
-  const mobileNavRef = useRef<HTMLDivElement>(null);
-  const [theme, setTheme] = useState('dark');
+type ModuleName = 'tts' | 'image' | 'video' | 'edit' | 'voiceover' | 'highlight' | 'code' | 'music';
 
-  useEffect(() => {
-    // Set initial theme based on system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const savedTheme = localStorage.getItem('theme');
+type OutputMessage = {
+    id: number;
+    message: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    time: string;
+};
 
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else if (prefersDark) {
-      setTheme('dark');
-    } else {
-      setTheme('light');
-    }
-  }, []);
+export default function NeoStudioPage() {
+    const [loading, setLoading] = useState(true);
+    const [activeModule, setActiveModule] = useState<ModuleName>('tts');
+    const [outputs, setOutputs] = useState<OutputMessage[]>([]);
+    const appContainerRef = useRef<HTMLDivElement>(null);
+    const cyberLoaderRef = useRef<HTMLDivElement>(null);
+    const matrixCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-  
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isMobileMenuOpen &&
-        mobileNavRef.current &&
-        !mobileNavRef.current.contains(event.target as Node) &&
-        mobileMenuBtnRef.current &&
-        !mobileMenuBtnRef.current.contains(event.target as Node)
-      ) {
-        setMobileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [isMobileMenuOpen]);
-
-  useEffect(() => {
-    const fadeElements = document.querySelectorAll('.fade-in');
-    const fadeObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    fadeElements.forEach((el) => fadeObserver.observe(el));
-
-    return () => {
-      fadeElements.forEach((el) => fadeObserver.unobserve(el));
-    };
-  }, []);
-
-  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    const targetId = e.currentTarget.getAttribute('href');
-    if (!targetId || targetId === '#') return;
-
-    const targetElement = document.querySelector(targetId);
-    if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-      setMobileMenuOpen(false);
-    }
-  };
-
-    const playVoicePreview = (voice: string, event: React.MouseEvent<HTMLDivElement>) => {
-        const messages: { [key: string]: string } = {
-            'aria': 'Hello! I am Aria, your English AI voice assistant.',
-            'marcus': 'Greetings! I am Marcus, ready to help with your text-to-speech needs.',
-            'sophie': 'Bonjour! Je suis Sophie, votre assistante vocale française.',
-            'kenji': 'こんにちは！私は健二です、日本語のAI音声です。',
-            'isabella': '¡Hola! Soy Isabella, tu asistente de voz en español.',
-            'priya': 'नमस्ते! मैं प्रिया हूं, आपकी हिंदी एआई आवाज सहायक।'
-        };
-
-        const utterance = new SpeechSynthesisUtterance(messages[voice]);
-        const voices = speechSynthesis.getVoices();
-        
-        const langMap: { [key: string]: string } = { 'aria': 'en-US', 'marcus': 'en-US', 'sophie': 'fr-FR', 'kenji': 'ja-JP', 'isabella': 'es-ES', 'priya': 'hi-IN' };
-        const targetLang = langMap[voice];
-        const matchedVoice = voices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
-        
-        if (matchedVoice) utterance.voice = matchedVoice;
-        utterance.rate = 0.9;
-        utterance.pitch = 1.1;
-
-        speechSynthesis.cancel();
-        speechSynthesis.speak(utterance);
-        
-        const voiceItem = event.currentTarget;
-        if (voiceItem) {
-          voiceItem.style.background = 'rgba(99, 102, 241, 0.3)';
-          setTimeout(() => {
-              voiceItem.style.background = '';
-          }, 2000);
-        }
-    };
-    
     useEffect(() => {
-        const loadVoices = () => {
-            console.log('Voices loaded:', speechSynthesis.getVoices().length);
-        };
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        return () => { window.speechSynthesis.onvoiceschanged = null; };
+        const timer = setTimeout(() => {
+            if (cyberLoaderRef.current) {
+                cyberLoaderRef.current.style.opacity = '0';
+                setTimeout(() => {
+                    if (cyberLoaderRef.current) cyberLoaderRef.current.style.display = 'none';
+                    if (appContainerRef.current) {
+                        appContainerRef.current.style.display = 'block';
+                        setTimeout(() => {
+                            if (appContainerRef.current) appContainerRef.current.style.opacity = '1';
+                            initializeMatrixEffect();
+                        }, 50);
+                    }
+                }, 500);
+            }
+        }, 2000);
+
+        addOutput('All AI modules initialized successfully', 'success', false);
+
+        return () => clearTimeout(timer);
     }, []);
 
-    const startQuickTTS = () => {
-        const text = prompt('Enter text to convert to speech:', 'Welcome to VoiceLab AI!');
-        if (text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            speechSynthesis.speak(utterance);
-            alert('Playing speech...');
+    const initializeMatrixEffect = () => {
+        const canvas = document.createElement('canvas');
+        canvas.className = 'matrix-effect';
+        document.body.appendChild(canvas);
+        matrixCanvasRef.current = canvas;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = "01";
+        const charSize = 14;
+        const columns = canvas.width / charSize;
+        const drops: number[] = [];
+
+        for (let i = 0; i < columns; i++) drops[i] = 1;
+
+        function drawMatrix() {
+            if (!ctx) return;
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0af';
+            ctx.font = `${charSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * charSize, drops[i] * charSize);
+
+                if (drops[i] * charSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
         }
+
+        const intervalId = setInterval(drawMatrix, 50);
+
+        const handleResize = () => {
+            if (canvas && ctx) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener('resize', handleResize);
+            if (canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+            }
+        };
     };
 
-    const openVoiceStudio = () => alert('Voice Studio would open in a real application. This is a demo interface.');
-    const downloadSamples = () => alert('Voice samples would start downloading. This is a demo.');
+    const addOutput = (message: string, type: OutputMessage['type'], showAlert = true) => {
+        setOutputs(prev => {
+            const newOutput = {
+                id: Date.now(),
+                message,
+                type,
+                time: new Date().toLocaleTimeString(),
+            };
+            const updatedOutputs = [newOutput, ...prev];
+            return updatedOutputs.slice(0, 10);
+        });
+    };
 
+    const clearOutput = () => {
+        setOutputs([]);
+        addOutput('Output cleared', 'info');
+    };
 
-  return (
-    <>
-      <style jsx global>{`
-        .header { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); padding: 1rem 2rem; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        .nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 700; background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--secondary))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .logo i { font-size: 1.8rem; }
-        .nav-links { display: flex; gap: 2rem; align-items: center; }
-        .nav-link { color: hsl(var(--light)); text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius); transition: var(--transition); }
-        .nav-link:hover { background: rgba(255, 255, 255, 0.1); }
-        .nav-link.active { background: hsl(var(--primary)); }
-        .mobile-menu-btn { display: none; background: none; border: none; color: hsl(var(--light)); font-size: 1.5rem; cursor: pointer; }
-        .btn { padding: 0.75rem 1.5rem; border-radius: var(--radius); border: none; cursor: pointer; transition: var(--transition); font-weight: 600; }
-        .btn-primary { background: hsl(var(--primary)); color: hsl(var(--light)); }
-        .btn-primary:hover { background: hsl(var(--primary-dark)); }
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-        .hero { text-align: center; padding: 4rem 2rem; background: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600'); background-size: cover; border-radius: var(--radius); margin-bottom: 2rem; }
-        .hero h1 { font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--secondary))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { font-size: 1.2rem; color: hsl(var(--gray)); max-width: 600px; margin: 0 auto 2rem; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
-        .stat-card { background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: var(--radius); text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); transition: var(--transition); }
-        .stat-card:hover { transform: translateY(-5px); border-color: hsl(var(--primary)); }
-        .stat-number { font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); margin-bottom: 0.5rem; }
-        .stat-label { color: hsl(var(--gray)); font-size: 0.9rem; }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
-        .feature-card { background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: var(--radius); border: 1px solid rgba(255, 255, 255, 0.1); transition: var(--transition); }
-        .feature-card:hover { background: rgba(99, 102, 241, 0.1); border-color: hsl(var(--primary)); }
-        .feature-icon { font-size: 2rem; color: hsl(var(--primary)); margin-bottom: 1rem; }
-        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
-        .action-card { background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark))); padding: 2rem; border-radius: var(--radius); text-align: center; cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; }
-        .action-card:nth-child(2) { background: linear-gradient(135deg, hsl(var(--secondary)), #059669); }
-        .action-card:nth-child(3) { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-        .action-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
-        .action-icon { font-size: 3rem; margin-bottom: 1rem; }
-        .voice-preview { background: rgba(255, 255, 255, 0.05); border-radius: var(--radius); padding: 2rem; margin-bottom: 3rem; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .voice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .voice-item { background: rgba(255, 255, 255, 0.05); padding: 1rem; border-radius: var(--radius); text-align: center; cursor: pointer; transition: var(--transition); }
-        .voice-item:hover { background: rgba(99, 102, 241, 0.2); transform: scale(1.05); }
-        .voice-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--secondary))); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-        .footer { background: rgba(15, 23, 42, 0.95); padding: 3rem 2rem; margin-top: 4rem; border-top: 1px solid rgba(255, 255, 255, 0.1); }
-        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 3rem; }
-        .footer-section h3 { color: hsl(var(--light)); margin-bottom: 1rem; }
-        .footer-section a { color: hsl(var(--gray)); text-decoration: none; display: block; margin-bottom: 0.5rem; transition: var(--transition); }
-        .footer-section a:hover { color: hsl(var(--primary)); }
-        .copyright { text-align: center; padding-top: 2rem; margin-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.1); color: hsl(var(--gray)); }
-        .mobile-nav { display: none; position: fixed; top: 70px; left: 0; right: 0; background: hsl(var(--darker)); padding: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 999; }
-        .mobile-nav.active { display: block; }
-        .theme-toggle { background: rgba(255, 255, 255, 0.1); border: none; width: 50px; height: 26px; border-radius: 13px; position: relative; cursor: pointer; margin-left: 1rem; }
-        .theme-toggle::before { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: hsl(var(--light)); border-radius: 50%; transition: var(--transition); }
-        html.dark .theme-toggle::before { transform: translateX(24px); }
-        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
-        .fade-in.visible { opacity: 1; transform: translateY(0); }
-        @media (max-width: 768px) {
-          .nav-links { display: none; }
-          .mobile-menu-btn { display: block; }
-          .hero h1 { font-size: 2rem; }
-          .hero p { font-size: 1rem; }
-          .container { padding: 1rem; }
-          .voice-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-          .features-grid, .quick-actions { grid-template-columns: 1fr; }
+    const handleActivateModule = (moduleName: ModuleName) => {
+        setActiveModule(moduleName);
+        addOutput(`Switched to ${moduleName.toUpperCase()} module`, 'info');
+    };
+
+    const generateSpeech = () => {
+        const textInput = document.getElementById('ttsInput') as HTMLTextAreaElement;
+        const text = textInput?.value;
+
+        if (!text || !text.trim()) {
+            addOutput('Please enter text to convert', 'warning');
+            return;
         }
-        @media (max-width: 480px) {
-          .header { padding: 1rem; }
-          .hero { padding: 2rem 1rem; }
-          .stat-card, .feature-card, .voice-preview { padding: 1.5rem; }
+
+        addOutput('Generating speech...', 'info');
+
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            const speedSlider = document.getElementById('speedSlider') as HTMLInputElement;
+            utterance.rate = parseFloat(speedSlider?.value || '1');
+
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                utterance.voice = voices[0];
+            }
+
+            utterance.onstart = () => addOutput('Speech started playing', 'success');
+            utterance.onend = () => addOutput('Speech generation complete', 'success');
+
+            speechSynthesis.speak(utterance);
+        }, 1000);
+    };
+
+    const downloadVoice = () => {
+        addOutput('Preparing voice download...', 'info');
+        setTimeout(() => {
+            addOutput('Voice downloaded as speech.mp3', 'success');
+        }, 1500);
+    };
+
+    const generateImage = () => {
+        const promptInput = document.getElementById('imagePrompt') as HTMLTextAreaElement;
+        const prompt = promptInput?.value;
+
+        if (!prompt || !prompt.trim()) {
+            addOutput('Please enter an image description', 'warning');
+            return;
         }
-      `}</style>
-      <header className="header">
-        <div className="nav-container">
-          <div className="logo">
-            <i className="fas fa-wave-square"></i>
-            <span>VoiceLab AI</span>
-          </div>
-          <nav className="nav-links">
-            <a href="#home" className="nav-link active" onClick={handleSmoothScroll}>Home</a>
-            <a href="#voices" className="nav-link" onClick={handleSmoothScroll}>Voices</a>
-            <a href="#features" className="nav-link" onClick={handleSmoothScroll}>Features</a>
-            <a href="#pricing" className="nav-link" onClick={handleSmoothScroll}>Pricing</a>
-            <a href="#docs" className="nav-link" onClick={handleSmoothScroll}>Docs</a>
-            <button className="theme-toggle" onClick={toggleTheme}></button>
-            <button className="btn btn-primary">Get Started</button>
-          </nav>
-          <button className="mobile-menu-btn" id="mobileMenuBtn" ref={mobileMenuBtnRef} onClick={toggleMobileMenu}>
-            <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-          </button>
-        </div>
-        <div className={`mobile-nav ${isMobileMenuOpen ? 'active' : ''}`} id="mobileNav" ref={mobileNavRef}>
-          <a href="#home" className="nav-link active" onClick={handleSmoothScroll}>Home</a>
-          <a href="#voices" className="nav-link" onClick={handleSmoothScroll}>Voices</a>
-          <a href="#features" className="nav-link" onClick={handleSmoothScroll}>Features</a>
-          <a href="#pricing" className="nav-link" onClick={handleSmoothScroll}>Pricing</a>
-          <a href="#docs" className="nav-link" onClick={handleSmoothScroll}>Docs</a>
-          <div style={{ padding: '1rem' }}>
-            <button className="btn btn-primary" style={{ width: '100%' }}>Get Started</button>
-          </div>
-        </div>
-      </header>
 
-      <main className="container">
-        <section className="hero fade-in" id="home">
-          <h1>Transform Text into Natural Speech</h1>
-          <p>Professional AI-powered text-to-speech with 50+ natural voices. Perfect for content creators, developers, and businesses.</p>
-          <button className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
-            <i className="fas fa-play-circle"></i> Try Demo Voices
-          </button>
-        </section>
+        addOutput(`Generating image: "${prompt}"`, 'info');
 
-        <section className="stats-grid fade-in">
-          <div className="stat-card">
-            <div className="stat-number">50+</div>
-            <div className="stat-label">AI Voices</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-number">30+</div>
-            <div className="stat-label">Languages</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-number">10M+</div>
-            <div className="stat-label">Words Processed</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-number">99.9%</div>
-            <div className="stat-label">Uptime</div>
-          </div>
-        </section>
-
-        <section className="fade-in" id="features">
-          <h2 style={{ marginBottom: '2rem', fontSize: '2rem' }}>Quick Actions</h2>
-          <div className="quick-actions">
-            <div className="action-card" onClick={startQuickTTS}>
-              <div className="action-icon"><i className="fas fa-microphone"></i></div>
-              <h3>Quick Speech</h3>
-              <p>Generate speech instantly</p>
-            </div>
-            <div className="action-card" onClick={openVoiceStudio}>
-              <div className="action-icon"><i className="fas fa-sliders-h"></i></div>
-              <h3>Voice Studio</h3>
-              <p>Advanced voice customization</p>
-            </div>
-            <div className="action-card" onClick={downloadSamples}>
-              <div className="action-icon"><i className="fas fa-download"></i></div>
-              <h3>Download Samples</h3>
-              <p>Get voice samples</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="fade-in" style={{ marginTop: '4rem' }}>
-          <h2 style={{ marginBottom: '2rem', fontSize: '2rem' }}>Key Features</h2>
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon"><i className="fas fa-brain"></i></div>
-              <h3>Neural Voices</h3>
-              <p>Advanced neural network technology for natural-sounding speech.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon"><i className="fas fa-globe"></i></div>
-              <h3>Multi-Language</h3>
-              <p>Support for 30+ languages and accents.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon"><i className="fas fa-tachometer-alt"></i></div>
-              <h3>Real-time Processing</h3>
-              <p>Generate speech in milliseconds with our optimized engine.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon"><i className="fas fa-code"></i></div>
-              <h3>API Access</h3>
-              <p>Easy integration with REST API and SDKs.</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="voice-preview fade-in" id="voices">
-          <h2 style={{ marginBottom: '1rem' }}>Popular Voices</h2>
-          <p style={{ color: 'var(--gray)', marginBottom: '1.5rem' }}>Click any voice to hear a preview</p>
-          <div className="voice-grid">
-            <div className="voice-item" onClick={(e) => playVoicePreview('aria', e)}>
-              <div className="voice-avatar">👩</div>
-              <h4>Aria</h4>
-              <small style={{ color: 'var(--gray)' }}>English, Female</small>
-            </div>
-            <div className="voice-item" onClick={(e) => playVoicePreview('marcus', e)}>
-              <div className="voice-avatar">👨</div>
-              <h4>Marcus</h4>
-              <small style={{ color: 'var(--gray)' }}>English, Male</small>
-            </div>
-            <div className="voice-item" onClick={(e) => playVoicePreview('sophie', e)}>
-              <div className="voice-avatar">🇫🇷</div>
-              <h4>Sophie</h4>
-              <small style={{ color: 'var(--gray)' }}>French, Female</small>
-            </div>
-             <div className="voice-item" onClick={(e) => playVoicePreview('kenji', e)}>
-                    <div className="voice-avatar">🇯🇵</div>
-                    <h4>Kenji</h4>
-                    <small style={{ color: 'var(--gray)' }}>Japanese, Male</small>
-                </div>
-                <div className="voice-item" onClick={(e) => playVoicePreview('isabella', e)}>
-                    <div className="voice-avatar">🇪🇸</div>
-                    <h4>Isabella</h4>
-                    <small style={{ color: 'var(--gray)' }}>Spanish, Female</small>
-                </div>
-                <div className="voice-item" onClick={(e) => playVoicePreview('priya', e)}>
-                    <div className="voice-avatar">🇮🇳</div>
-                    <h4>Priya</h4>
-                    <small style={{ color: 'var(--gray)' }}>Hindi, Female</small>
-                </div>
-          </div>
-        </section>
-      </main>
-      
-      <footer className="footer">
-        <div className="footer-content">
-            <div className="footer-section">
-                <h3>VoiceLab AI</h3>
-                <p>Professional text-to-speech platform powered by advanced AI technology.</p>
-            </div>
-            <div className="footer-section">
-                <h3>Product</h3>
-                <a href="#voices" onClick={handleSmoothScroll}>Voices</a>
-                <a href="#pricing" onClick={handleSmoothScroll}>Pricing</a>
-                <a href="#api" onClick={handleSmoothScroll}>API Docs</a>
-                <a href="#support" onClick={handleSmoothScroll}>Support</a>
-            </div>
-            <div className="footer-section">
-                <h3>Legal</h3>
-                <a href="#privacy" onClick={handleSmoothScroll}>Privacy Policy</a>
-                <a href="#terms" onClick={handleSmoothScroll}>Terms of Service</a>
-                <a href="#cookies" onClick={handleSmoothScroll}>Cookie Policy</a>
-            </div>
-            <div className="footer-section">
-                <h3>Connect</h3>
-                <a href="#twitter"><i className="fab fa-twitter"></i> Twitter</a>
-                <a href="#github"><i className="fab fa-github"></i> GitHub</a>
-                <a href="#discord"><i className="fab fa-discord"></i> Discord</a>
-                <a href="#email"><i className="fas fa-envelope"></i> Contact</a>
-            </div>
-        </div>
+        const canvas = document.getElementById('imageCanvas');
+        if (!canvas) return;
         
-        <div className="copyright">
-            <p>&copy; 2024 VoiceLab AI. All rights reserved.</p>
+        canvas.innerHTML = '<div style="text-align: center;"><div class="spinner"></div><p style="color: var(--gray); margin-top: 10px;">Generating AI image...</p></div>';
+
+        setTimeout(() => {
+            const images = [
+                'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop'
+            ];
+            const randomImage = images[Math.floor(Math.random() * images.length)];
+            canvas.innerHTML = `<img src="${randomImage}" alt="Generated Image" style="width: 100%; border-radius: var(--radius-md);">`;
+            addOutput('Image generated successfully', 'success');
+        }, 3000);
+    };
+
+    const projectAction = (action: 'save' | 'export' | 'runAll') => {
+        const messages = {
+            save: { start: 'Saving project...', end: 'Project saved to cloud storage' },
+            export: { start: 'Exporting project files...', end: 'Project exported successfully' },
+            runAll: { start: 'Running all AI modules in sequence...', end: 'All AI processes completed' }
+        };
+        addOutput(messages[action].start, 'info');
+        setTimeout(() => {
+            addOutput(messages[action].end, 'success');
+        }, 2000);
+    };
+
+    const modules: { id: ModuleName; icon: string; title: string; desc: string }[] = [
+        { id: 'tts', icon: 'fa-wave-square', title: 'Text to Speech', desc: 'Convert text to natural voice' },
+        { id: 'image', icon: 'fa-image', title: 'AI Image Generator', desc: 'Create images from prompts' },
+        { id: 'video', icon: 'fa-video', title: 'Text to Video', desc: 'Generate videos from text' },
+        { id: 'edit', icon: 'fa-edit', title: 'Photo Editing', desc: 'AI-powered photo editing' },
+        { id: 'voiceover', icon: 'fa-microphone-alt', title: 'Voice on Video', desc: 'Add voiceovers to videos' },
+        { id: 'highlight', icon: 'fa-highlighter', title: 'Text Highlighting', desc: 'Highlight text in videos' },
+        { id: 'code', icon: 'fa-code', title: 'Code Generation', desc: 'Generate code from prompts' },
+        { id: 'music', icon: 'fa-music', title: 'AI Music Generator', desc: 'Create music from text' },
+    ];
+    
+    const outputColors = {
+        info: 'var(--primary)',
+        success: 'var(--secondary)',
+        warning: 'var(--accent)',
+        error: 'var(--danger)'
+    };
+
+
+    return (
+      <>
+        <div className="cyber-loader" id="cyberLoader" ref={cyberLoaderRef}>
+            <div className="cyber-grid">
+                {[...Array(16)].map((_, i) => (
+                    <div key={i} className="cyber-cell" style={{ animationDelay: `${i * 0.1}s` }}></div>
+                ))}
+            </div>
+            <h2 style={{ color: 'var(--primary)', marginTop: '20px' }}>INITIALIZING NEO STUDIO</h2>
+            <p style={{ color: 'var(--gray)', marginTop: '10px' }}>Loading quantum neural networks...</p>
         </div>
-    </footer>
-    </>
-  );
+
+        <div className="app-container" id="appContainer" ref={appContainerRef}>
+            <header className="holographic-header">
+                <div className="header-content">
+                    <div className="logo">
+                        <div className="logo-icon"><i className="fas fa-brain"></i></div>
+                        <div className="logo-text">NEO STUDIO</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                        <div className="neural-btn" onClick={() => projectAction('export')}><i className="fas fa-download"></i> Export</div>
+                        <div className="neural-btn secondary" onClick={() => projectAction('save')}><i className="fas fa-save"></i> Save</div>
+                        <div className="neural-btn" style={{ background: 'var(--accent)' }} onClick={() => projectAction('runAll')}><i className="fas fa-play"></i> Run All AI</div>
+                    </div>
+                </div>
+            </header>
+
+            <main className="neural-dashboard">
+                <div className="dashboard-grid">
+                    <div className="neural-modules">
+                        <h3 style={{ marginBottom: '25px', color: 'var(--light)' }}>AI MODULES</h3>
+                        {modules.map(mod => (
+                             <div key={mod.id} className={`module-item ${activeModule === mod.id ? 'active' : ''}`} onClick={() => handleActivateModule(mod.id)}>
+                                <div className="module-icon"><i className={`fas ${mod.icon}`}></i></div>
+                                <h4>{mod.title}</h4>
+                                <p style={{ color: 'var(--gray)', fontSize: '0.9rem' }}>{mod.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="main-workspace">
+                        {activeModule === 'tts' && (
+                            <div id="ttsModule" className="module-content active">
+                                <div className="workspace-header">
+                                    <h2 className="workspace-title">🎙️ Advanced Text to Speech</h2>
+                                    <p className="workspace-subtitle">Convert text to natural AI voices with emotion control</p>
+                                </div>
+                                <div className="prompt-system">
+                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech..." defaultValue="Welcome to Neo Studio, the ultimate AI multimedia suite. This text will be converted into natural-sounding speech with advanced emotion and tone control."></textarea>
+                                </div>
+                                <div className="ai-controls">
+                                    <div className="control-panel">
+                                        <h3 className="control-title"><i className="fas fa-sliders-h"></i> Voice Settings</h3>
+                                        <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Voice Type</label>
+                                        <select style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}>
+                                            <option>Natural Male</option><option>Natural Female</option><option>Narrator</option><option>Cartoon</option><option>Robotic</option>
+                                        </select>
+                                        <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Emotion</label>
+                                        <input type="range" className="neural-slider" id="emotionSlider" min="0" max="100" defaultValue="50" />
+                                        <label style={{ display: 'block', margin: '20px 0 10px', color: 'var(--gray)' }}>Speed</label>
+                                        <input type="range" className="neural-slider" id="speedSlider" min="0.5" max="2" step="0.1" defaultValue="1" />
+                                    </div>
+                                    <div className="control-panel">
+                                        <h3 className="control-title"><i className="fas fa-waveform"></i> Voice Effects</h3>
+                                        <div className="voice-waveform" id="voiceWaveform"><div className="wave"></div></div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
+                                            <button className="neural-btn" onClick={generateSpeech} style={{ padding: '12px' }}><i className="fas fa-play"></i> Generate</button>
+                                            <button className="neural-btn secondary" onClick={downloadVoice} style={{ padding: '12px' }}><i className="fas fa-download"></i> Download</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeModule === 'image' && (
+                             <div id="imageModule" className="module-content active">
+                                 <div className="workspace-header">
+                                     <h2 className="workspace-title">🎨 AI Image Generator</h2>
+                                     <p className="workspace-subtitle">Generate stunning images from text prompts</p>
+                                 </div>
+                                 <div className="prompt-system">
+                                     <textarea className="prompt-input" id="imagePrompt" placeholder="Describe the image you want to generate..." defaultValue="A cyberpunk cityscape at night with neon lights, flying cars, and holographic advertisements, ultra detailed, 8k"></textarea>
+                                 </div>
+                                 <div className="ai-controls">
+                                     <div className="control-panel">
+                                         <h3 className="control-title"><i className="fas fa-palette"></i> Style Settings</h3>
+                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                             <button className="neural-btn" style={{ padding: '10px' }}>Realistic</button>
+                                             <button className="neural-btn" style={{ padding: '10px' }}>Anime</button>
+                                             <button className="neural-btn" style={{ padding: '10px' }}>Cyberpunk</button>
+                                             <button className="neural-btn" style={{ padding: '10px' }}>Fantasy</button>
+                                         </div>
+                                     </div>
+                                     <div className="control-panel">
+                                         <h3 className="control-title"><i className="fas fa-cogs"></i> Advanced</h3>
+                                         <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Resolution</label>
+                                         <select style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white' }}>
+                                             <option>512x512</option><option>768x768</option><option>1024x1024</option><option>2048x2048</option>
+                                         </select>
+                                     </div>
+                                 </div>
+                                 <div className="preview-area">
+                                     <div className="preview-container">
+                                         <div className="ai-canvas" id="imageCanvas">
+                                             <i className="fas fa-image" style={{ fontSize: '48px', color: 'var(--gray)' }}></i>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <button className="neural-btn large" onClick={generateImage} style={{ width: '100%' }}>
+                                     <i className="fas fa-magic"></i> Generate Image
+                                 </button>
+                             </div>
+                        )}
+                         {/* Other modules would be conditionally rendered here */}
+                    </div>
+
+                    <div className="neural-output">
+                        <div className="output-header">
+                            <h3>AI Output</h3>
+                            <button className="neural-btn" onClick={clearOutput} style={{ padding: '8px 15px', fontSize: '14px' }}>
+                                <i className="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                        <div className="output-list" id="outputList">
+                           {outputs.map(out => (
+                             <div key={out.id} className="output-item" style={{ borderLeftColor: outputColors[out.type] }}>
+                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                 <strong style={{ color: outputColors[out.type] }}>{out.type.toUpperCase()}</strong>
+                                 <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>{out.time}</span>
+                               </div>
+                               <p style={{ color: 'var(--gray)', margin: '5px 0 0' }}>{out.message}</p>
+                             </div>
+                           ))}
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+      </>
+    );
 }

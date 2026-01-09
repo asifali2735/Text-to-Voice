@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "VoiceLab AI - Text to Natural Speech",
-  description: "Professional AI-powered text-to-speech with 50+ natural voices.",
+  title: "Neo Studio - Ultimate AI Multimedia Suite",
+  description: "The ultimate AI multimedia suite for text-to-speech, image generation, video creation, and more.",
 };
 
 export default function RootLayout({

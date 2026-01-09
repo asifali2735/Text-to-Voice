@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
-type ModuleName = 'tts' | 'image' | 'video' | 'edit' | 'voiceover' | 'highlight' | 'code' | 'music';
+type ModuleName = 'speech-highlight' | 'image' | 'video' | 'edit' | 'voiceover' | 'code' | 'music';
 
 type OutputMessage = {
     id: number;
@@ -12,7 +12,7 @@ type OutputMessage = {
 
 export default function NeoStudioPage() {
     const [loading, setLoading] = useState(true);
-    const [activeModule, setActiveModule] = useState<ModuleName>('tts');
+    const [activeModule, setActiveModule] = useState<ModuleName>('speech-highlight');
     const [outputs, setOutputs] = useState<OutputMessage[]>([]);
     const appContainerRef = useRef<HTMLDivElement>(null);
     const cyberLoaderRef = useRef<HTMLDivElement>(null);
@@ -117,7 +117,7 @@ export default function NeoStudioPage() {
 
     const handleActivateModule = (moduleName: ModuleName) => {
         setActiveModule(moduleName);
-        addOutput(`Switched to ${moduleName.toUpperCase()} module`, 'info');
+        addOutput(`Switched to ${moduleName.replace('-', ' & ').toUpperCase()} module`, 'info');
     };
 
     const generateSpeech = () => {
@@ -222,12 +222,11 @@ export default function NeoStudioPage() {
     };
 
     const modules: { id: ModuleName; icon: string; title: string; desc: string }[] = [
-        { id: 'tts', icon: 'fa-wave-square', title: 'Text to Speech', desc: 'Convert text to natural voice' },
+        { id: 'speech-highlight', icon: 'fa-pen-to-square', title: 'Speech & Highlight', desc: 'Generate speech and highlight text' },
         { id: 'image', icon: 'fa-image', title: 'AI Image Generator', desc: 'Create images from prompts' },
         { id: 'video', icon: 'fa-video', title: 'Text to Video', desc: 'Generate videos from text' },
         { id: 'edit', icon: 'fa-edit', title: 'Photo Editing', desc: 'AI-powered photo editing' },
         { id: 'voiceover', icon: 'fa-microphone-alt', title: 'Voice on Video', desc: 'Add voiceovers to videos' },
-        { id: 'highlight', icon: 'fa-highlighter', title: 'Text Highlighting', desc: 'Highlight text in videos' },
         { id: 'code', icon: 'fa-code', title: 'Code Generation', desc: 'Generate code from prompts' },
         { id: 'music', icon: 'fa-music', title: 'AI Music Generator', desc: 'Create music from text' },
     ];
@@ -281,14 +280,14 @@ export default function NeoStudioPage() {
                     </div>
 
                     <div className="main-workspace">
-                        {activeModule === 'tts' && (
-                            <div id="ttsModule" className="module-content active">
+                        {activeModule === 'speech-highlight' && (
+                            <div id="speechHighlightModule" className="module-content active">
                                 <div className="workspace-header">
-                                    <h2 className="workspace-title">🎙️ Advanced Text to Speech</h2>
-                                    <p className="workspace-subtitle">Convert text to natural AI voices with emotion control</p>
+                                    <h2 className="workspace-title">🎙️ Speech & Highlight</h2>
+                                    <p className="workspace-subtitle">Generate natural AI voices and prepare text for video highlighting</p>
                                 </div>
                                 <div className="prompt-system">
-                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech..." defaultValue="Welcome to Neo Studio. 欢迎来到 Neo Studio."></textarea>
+                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech or highlight..." defaultValue="Welcome to Neo Studio. 欢迎来到 Neo Studio."></textarea>
                                 </div>
                                 <div className="ai-controls">
                                     <div className="control-panel">
@@ -310,10 +309,15 @@ export default function NeoStudioPage() {
                                         <input type="range" className="neural-slider" id="speedSlider" min="0.5" max="2" step="0.1" defaultValue="1" />
                                     </div>
                                     <div className="control-panel">
-                                        <h3 className="control-title"><i className="fas fa-waveform"></i> Voice Effects</h3>
-                                        <div className="voice-waveform" id="voiceWaveform"><div className="wave"></div></div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
-                                            <button className="neural-btn" onClick={generateSpeech} style={{ padding: '12px' }}><i className="fas fa-play"></i> Generate</button>
+                                        <h3 className="control-title"><i className="fas fa-highlighter"></i> Highlight Settings</h3>
+                                        <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Highlight Style</label>
+                                        <select style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}>
+                                            <option>Karaoke</option>
+                                            <option>Word by Word</option>
+                                            <option>Full Sentence</option>
+                                        </select>
+                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
+                                            <button className="neural-btn" onClick={generateSpeech} style={{ padding: '12px' }}><i className="fas fa-play"></i> Generate Speech</button>
                                             <button className="neural-btn secondary" onClick={downloadVoice} style={{ padding: '12px' }}><i className="fas fa-download"></i> Download</button>
                                         </div>
                                     </div>

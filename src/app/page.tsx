@@ -136,10 +136,32 @@ export default function NeoStudioPage() {
             const speedSlider = document.getElementById('speedSlider') as HTMLInputElement;
             utterance.rate = parseFloat(speedSlider?.value || '1');
 
+            const voiceSelect = document.getElementById('voiceType') as HTMLSelectElement;
+            const selectedVoiceType = voiceSelect.value;
+            
             const voices = speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                utterance.voice = voices[0];
+            let selectedVoice = voices[0]; // Default voice
+
+            if (selectedVoiceType === 'chinese_female' || selectedVoiceType === 'chinese_male') {
+                const chineseVoice = voices.find(voice => voice.lang.startsWith('zh'));
+                if (chineseVoice) {
+                    selectedVoice = chineseVoice;
+                } else {
+                    addOutput('No Chinese voice found in your browser.', 'warning');
+                    return;
+                }
+            } else {
+                 const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
+                 if (selectedVoiceType === 'natural_male' && englishVoices.length > 1) {
+                    selectedVoice = englishVoices.find(v => v.name.toLowerCase().includes('male')) || englishVoices[1] || englishVoices[0];
+                 } else {
+                    selectedVoice = englishVoices[0];
+                 }
             }
+             if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
 
             utterance.onstart = () => addOutput('Speech started playing', 'success');
             utterance.onend = () => addOutput('Speech generation complete', 'success');
@@ -262,14 +284,20 @@ export default function NeoStudioPage() {
                                     <p className="workspace-subtitle">Convert text to natural AI voices with emotion control</p>
                                 </div>
                                 <div className="prompt-system">
-                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech..." defaultValue="Welcome to Neo Studio, the ultimate AI multimedia suite. This text will be converted into natural-sounding speech with advanced emotion and tone control."></textarea>
+                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech..." defaultValue="Welcome to Neo Studio. 欢迎来到 Neo Studio."></textarea>
                                 </div>
                                 <div className="ai-controls">
                                     <div className="control-panel">
                                         <h3 className="control-title"><i className="fas fa-sliders-h"></i> Voice Settings</h3>
                                         <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Voice Type</label>
-                                        <select style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}>
-                                            <option>Natural Male</option><option>Natural Female</option><option>Narrator</option><option>Cartoon</option><option>Robotic</option>
+                                        <select id="voiceType" style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}>
+                                            <option value="natural_female">Natural Female</option>
+                                            <option value="natural_male">Natural Male</option>
+                                            <option value="chinese_female">Chinese Female</option>
+                                            <option value="chinese_male">Chinese Male</option>
+                                            <option value="narrator">Narrator</option>
+                                            <option value="cartoon">Cartoon</option>
+                                            <option value="robotic">Robotic</option>
                                         </select>
                                         <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Emotion</label>
                                         <input type="range" className="neural-slider" id="emotionSlider" min="0" max="100" defaultValue="50" />

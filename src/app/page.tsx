@@ -12,13 +12,11 @@ type OutputMessage = {
 };
 
 export default function NeoStudioPage() {
-    const [loading, setLoading] = useState(true);
     const [activeModule, setActiveModule] = useState<ModuleName>('speech-highlight');
     const [outputs, setOutputs] = useState<OutputMessage[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const appContainerRef = useRef<HTMLDivElement>(null);
     const cyberLoaderRef = useRef<HTMLDivElement>(null);
-    const matrixCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
 
@@ -60,7 +58,6 @@ export default function NeoStudioPage() {
         const canvas = document.createElement('canvas');
         canvas.className = 'matrix-effect';
         document.body.appendChild(canvas);
-        matrixCanvasRef.current = canvas;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;

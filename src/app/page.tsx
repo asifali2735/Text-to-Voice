@@ -13,6 +13,10 @@ export default function NeoStudioPage() {
     const cyberLoaderRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    const [ttsText, setTtsText] = useState('Hello. Bonjour. Hola. こんにちは. Здравствуйте.');
+    const [imagePrompt, setImagePrompt] = useState('A cyberpunk cityscape at night with neon lights, flying cars, and holographic advertisements, ultra detailed, 8k');
+    const [selectedVoice, setSelectedVoice] = useState('Algenib');
+
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -106,28 +110,8 @@ export default function NeoStudioPage() {
         setActiveModule(moduleName);
     };
 
-    const getSelectedVoice = () => {
-        const voiceSelect = document.getElementById('voiceType') as HTMLSelectElement;
-        const selectedVoice = voiceSelect?.value || 'Algenib'; // Default to Algenib
-        const voiceMap: { [key: string]: string } = {
-            natural_female: 'Algenib',
-            natural_male: 'Antares',
-            young_boy: 'Canopus',
-            chinese_female: 'Hadrian',
-            chinese_male: 'Hadrian', // No distinct male Chinese voice in this set
-            narrator: 'Bellatrix',
-            cartoon: 'Izar',
-            robotic: 'Fomalhaut',
-        };
-        return voiceMap[selectedVoice] || 'Algenib';
-    };
-
-
     const generateAndPlaySpeech = async () => {
-        const textInput = document.getElementById('ttsInput') as HTMLTextAreaElement;
-        const text = textInput?.value;
-
-        if (!text || !text.trim()) {
+        if (!ttsText || !ttsText.trim()) {
             console.warn('Please enter text to convert');
             return;
         }
@@ -140,8 +124,7 @@ export default function NeoStudioPage() {
         setIsGenerating(true);
 
         try {
-            const voice = getSelectedVoice();
-            const response = await textToSpeech({ text, voice });
+            const response = await textToSpeech({ text: ttsText, voice: selectedVoice });
             if (response.media) {
                 audioRef.current.src = response.media;
                 audioRef.current.play();
@@ -157,10 +140,7 @@ export default function NeoStudioPage() {
 
 
     const downloadVoice = async () => {
-        const textInput = document.getElementById('ttsInput') as HTMLTextAreaElement;
-        const text = textInput?.value;
-
-        if (!text || !text.trim()) {
+        if (!ttsText || !ttsText.trim()) {
             console.warn('Please enter text to generate audio for');
             return;
         }
@@ -168,8 +148,7 @@ export default function NeoStudioPage() {
         setIsGenerating(true);
 
         try {
-            const voice = getSelectedVoice();
-            const response = await textToSpeech({ text, voice });
+            const response = await textToSpeech({ text: ttsText, voice: selectedVoice });
             if (response.media) {
                 const link = document.createElement('a');
                 link.href = response.media;
@@ -188,15 +167,12 @@ export default function NeoStudioPage() {
     };
 
     const generateImage = async () => {
-        const promptInput = document.getElementById('imagePrompt') as HTMLTextAreaElement;
-        const prompt = promptInput?.value;
-
-        if (!prompt || !prompt.trim()) {
+        if (!imagePrompt || !imagePrompt.trim()) {
             console.warn('Please enter an image description');
             return;
         }
 
-        const finalPrompt = `${prompt}, ${imageStyle} style`;
+        const finalPrompt = `${imagePrompt}, ${imageStyle} style`;
         setIsGenerating(true);
 
         const canvas = document.getElementById('imageCanvas');
@@ -290,21 +266,31 @@ export default function NeoStudioPage() {
                                     <p className="workspace-subtitle">Generate natural AI voices and prepare text for video highlighting</p>
                                 </div>
                                 <div className="prompt-system">
-                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech or highlight..." defaultValue="Hello. Bonjour. Hola. こんにちは. Здравствуйте."></textarea>
+                                    <textarea 
+                                      className="prompt-input" 
+                                      id="ttsInput" 
+                                      placeholder="Enter text to convert to speech or highlight..." 
+                                      value={ttsText}
+                                      onChange={(e) => setTtsText(e.target.value)}
+                                    ></textarea>
                                 </div>
                                 <div className="ai-controls">
                                     <div className="control-panel">
                                         <h3 className="control-title"><i className="fas fa-sliders-h"></i> Voice Settings</h3>
                                         <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Voice Type</label>
-                                        <select id="voiceType" style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}>
-                                            <option value="natural_female">Natural Female</option>
-                                            <option value="natural_male">Natural Male</option>
-                                            <option value="young_boy">Young Boy</option>
-                                            <option value="chinese_female">Chinese Female</option>
-                                            <option value="chinese_male">Chinese Male</option>
-                                            <option value="narrator">Narrator</option>
-                                            <option value="cartoon">Cartoon</option>
-                                            <option value="robotic">Robotic</option>
+                                        <select 
+                                          id="voiceType" 
+                                          value={selectedVoice}
+                                          onChange={(e) => setSelectedVoice(e.target.value)}
+                                          style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}
+                                        >
+                                            <option value="Algenib">Natural Female</option>
+                                            <option value="Antares">Natural Male</option>
+                                            <option value="Canopus">Young Boy</option>
+                                            <option value="Hadrian">Chinese Female</option>
+                                            <option value="Bellatrix">Narrator</option>
+                                            <option value="Izar">Cartoon</option>
+                                            <option value="Fomalhaut">Robotic</option>
                                         </select>
                                     </div>
                                     <div className="control-panel">
@@ -328,7 +314,13 @@ export default function NeoStudioPage() {
                                      <p className="workspace-subtitle">Generate stunning images from text prompts</p>
                                  </div>
                                  <div className="prompt-system">
-                                     <textarea className="prompt-input" id="imagePrompt" placeholder="Describe the image you want to generate..." defaultValue="A cyberpunk cityscape at night with neon lights, flying cars, and holographic advertisements, ultra detailed, 8k"></textarea>
+                                     <textarea 
+                                       className="prompt-input" 
+                                       id="imagePrompt" 
+                                       placeholder="Describe the image you want to generate..." 
+                                       value={imagePrompt}
+                                       onChange={(e) => setImagePrompt(e.target.value)}
+                                      ></textarea>
                                  </div>
                                  <div className="ai-controls">
                                      <div className="control-panel">

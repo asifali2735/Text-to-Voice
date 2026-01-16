@@ -327,7 +327,7 @@ export default function NeoStudioPage() {
                                     <p className="workspace-subtitle">Generate natural AI voices and prepare text for video highlighting</p>
                                 </div>
                                 <div className="prompt-system">
-                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech or highlight..." defaultValue="Welcome to Neo Studio. 欢迎来到 Neo Studio."></textarea>
+                                    <textarea className="prompt-input" id="ttsInput" placeholder="Enter text to convert to speech or highlight..." defaultValue="Hello. Bonjour. Hola. こんにちは. Здравствуйте."></textarea>
                                 </div>
                                 <div className="ai-controls">
                                     <div className="control-panel">
@@ -435,3 +435,5 @@ export default function NeoStudioPage() {
       </>
     );
 }
+
+    

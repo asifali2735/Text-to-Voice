@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { textToSpeech } from '@/ai/flows/speech';
+import { generateImage as generateImageFlow } from '@/ai/flows/image';
 
 type ModuleName = 'speech-highlight' | 'image' | 'video' | 'edit' | 'voiceover' | 'code' | 'music';
 
@@ -221,7 +222,7 @@ export default function NeoStudioPage() {
         }
     };
 
-    const generateImage = () => {
+    const generateImage = async () => {
         const promptInput = document.getElementById('imagePrompt') as HTMLTextAreaElement;
         const prompt = promptInput?.value;
 
@@ -230,23 +231,32 @@ export default function NeoStudioPage() {
             return;
         }
 
+        setIsGenerating(true);
         addOutput(`Generating image: "${prompt}"`, 'info');
 
         const canvas = document.getElementById('imageCanvas');
-        if (!canvas) return;
+        if (!canvas) {
+            setIsGenerating(false);
+            return;
+        }
         
         canvas.innerHTML = '<div style="text-align: center;"><div class="spinner"></div><p style="color: var(--gray); margin-top: 10px;">Generating AI image...</p></div>';
 
-        setTimeout(() => {
-            const images = [
-                'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop'
-            ];
-            const randomImage = images[Math.floor(Math.random() * images.length)];
-            canvas.innerHTML = `<img src="${randomImage}" alt="Generated Image" style="width: 100%; border-radius: var(--radius-md);">`;
-            addOutput('Image generated successfully', 'success');
-        }, 3000);
+        try {
+            const response = await generateImageFlow({ prompt });
+            if (response.url) {
+                canvas.innerHTML = `<img src="${response.url}" alt="Generated Image" style="width: 100%; border-radius: var(--radius-md);">`;
+                addOutput('Image generated successfully', 'success');
+            } else {
+                throw new Error('No image data received from AI.');
+            }
+        } catch (error: any) {
+            console.error('Error generating image:', error);
+            addOutput(`Error: ${error.message || 'Could not generate image.'}`, 'error');
+            canvas.innerHTML = `<i class="fas fa-image" style="font-size: 48px; color: var(--gray);"></i>`;
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const projectAction = (action: 'save' | 'export' | 'runAll') => {
@@ -416,8 +426,8 @@ export default function NeoStudioPage() {
                                          </div>
                                      </div>
                                  </div>
-                                 <button className="neural-btn large" onClick={generateImage} style={{ width: '100%' }}>
-                                     <i className="fas fa-magic"></i> Generate Image
+                                 <button className="neural-btn large" onClick={generateImage} style={{ width: '100%' }} disabled={isGenerating}>
+                                     {isGenerating ? <div className="spinner" style={{width: '20px', height: '20px', margin: 0}}></div> : <><i className="fas fa-magic"></i> Generate Image</>}
                                  </button>
                              </div>
                         )}

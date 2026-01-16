@@ -278,6 +278,20 @@ export default function NeoStudioPage() {
         error: 'var(--danger)'
     };
 
+    const PlaceholderModule = ({ icon, title }: { icon: string, title: string }) => (
+      <div className="module-content active">
+          <div className="workspace-header">
+              <h2 className="workspace-title"><i className={`fas ${icon}`}></i> {title}</h2>
+              <p className="workspace-subtitle">This feature is coming soon.</p>
+          </div>
+          <div style={{ textAlign: 'center', color: 'var(--gray)', marginTop: '80px' }}>
+              <i className={`fas ${icon}`} style={{ fontSize: '48px', marginBottom: '20px' }}></i>
+              <h3>Module Under Construction</h3>
+              <p>This AI module is currently in development. Check back later!</p>
+          </div>
+      </div>
+    );
+
 
     return (
       <>
@@ -407,7 +421,11 @@ export default function NeoStudioPage() {
                                  </button>
                              </div>
                         )}
-                         {/* Other modules would be conditionally rendered here */}
+                        {activeModule === 'video' && <PlaceholderModule icon="fa-video" title="Text to Video" />}
+                        {activeModule === 'edit' && <PlaceholderModule icon="fa-edit" title="Photo Editing" />}
+                        {activeModule === 'voiceover' && <PlaceholderModule icon="fa-microphone-alt" title="Voice on Video" />}
+                        {activeModule === 'code' && <PlaceholderModule icon="fa-code" title="Code Generation" />}
+                        {activeModule === 'music' && <PlaceholderModule icon="fa-music" title="AI Music Generator" />}
                     </div>
 
                     <div className="neural-output">
@@ -435,5 +453,3 @@ export default function NeoStudioPage() {
       </>
     );
 }
-
-    

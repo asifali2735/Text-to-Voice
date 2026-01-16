@@ -261,15 +261,6 @@ export default function NeoStudioPage() {
         }
     };
 
-    const projectAction = (action: 'save' | 'export' | 'runAll') => {
-        const messages = {
-            save: 'This is a placeholder. A full implementation would save your work to a cloud database.',
-            export: 'This is a placeholder. A full implementation would package your project files for download.',
-            runAll: 'This is a placeholder. A full implementation would run a sequence of AI tasks you define.'
-        };
-        addOutput(messages[action], 'warning');
-    };
-
     const modules: { id: ModuleName; icon: string; title: string; desc: string }[] = [
         { id: 'speech-highlight', icon: 'fa-pen-to-square', title: 'Speech & Highlight', desc: 'Generate speech and highlight text' },
         { id: 'image', icon: 'fa-image', title: 'AI Image Generator', desc: 'Create images from prompts' },
@@ -322,11 +313,6 @@ export default function NeoStudioPage() {
                     <div className="logo">
                         <div className="logo-icon"><i className="fas fa-brain"></i></div>
                         <div className="logo-text">NEO STUDIO</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <div className="neural-btn" onClick={() => projectAction('export')}><i className="fas fa-download"></i> Export</div>
-                        <div className="neural-btn secondary" onClick={() => projectAction('save')}><i className="fas fa-save"></i> Save</div>
-                        <div className="neural-btn" style={{ background: 'var(--accent)' }} onClick={() => projectAction('runAll')}><i className="fas fa-play"></i> Run All AI</div>
                     </div>
                 </div>
             </header>

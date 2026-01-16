@@ -5,16 +5,8 @@ import { generateImage as generateImageFlow } from '@/ai/flows/image';
 
 type ModuleName = 'speech-highlight' | 'image' | 'video' | 'edit' | 'voiceover';
 
-type OutputMessage = {
-    id: number;
-    message: string;
-    type: 'info' | 'success' | 'warning' | 'error';
-    time: string;
-};
-
 export default function NeoStudioPage() {
     const [activeModule, setActiveModule] = useState<ModuleName>('speech-highlight');
-    const [outputs, setOutputs] = useState<OutputMessage[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [imageStyle, setImageStyle] = useState('Cyberpunk');
     const appContainerRef = useRef<HTMLDivElement>(null);
@@ -38,8 +30,6 @@ export default function NeoStudioPage() {
                 }, 500);
             }
         }, 2000);
-
-        addOutput('All AI modules initialized successfully', 'success', false);
 
         // Create a hidden audio element to play the speech
         const audio = new Audio();
@@ -112,27 +102,8 @@ export default function NeoStudioPage() {
         };
     };
 
-    const addOutput = (message: string, type: OutputMessage['type'], showAlert = true) => {
-        setOutputs(prev => {
-            const newOutput = {
-                id: Date.now(),
-                message,
-                type,
-                time: new Date().toLocaleTimeString(),
-            };
-            const updatedOutputs = [newOutput, ...prev];
-            return updatedOutputs.slice(0, 10);
-        });
-    };
-
-    const clearOutput = () => {
-        setOutputs([]);
-        addOutput('Output cleared', 'info');
-    };
-
     const handleActivateModule = (moduleName: ModuleName) => {
         setActiveModule(moduleName);
-        addOutput(`Switched to ${moduleName.replace('-', ' & ').toUpperCase()} module`, 'info');
     };
 
     const getSelectedVoice = () => {
@@ -157,32 +128,28 @@ export default function NeoStudioPage() {
         const text = textInput?.value;
 
         if (!text || !text.trim()) {
-            addOutput('Please enter text to convert', 'warning');
+            console.warn('Please enter text to convert');
             return;
         }
 
         if (!audioRef.current) {
-            addOutput('Audio player not initialized.', 'error');
+            console.error('Audio player not initialized.');
             return;
         }
         
         setIsGenerating(true);
-        addOutput('Generating AI speech...', 'info');
 
         try {
             const voice = getSelectedVoice();
             const response = await textToSpeech({ text, voice });
             if (response.media) {
-                addOutput('Speech generated. Playing now...', 'success');
                 audioRef.current.src = response.media;
                 audioRef.current.play();
-                audioRef.current.onended = () => addOutput('Playback finished.', 'info');
             } else {
                 throw new Error('No audio data received from AI.');
             }
         } catch (error: any) {
             console.error('Error generating speech:', error);
-            addOutput(`Error: ${error.message || 'Could not generate speech.'}`, 'error');
         } finally {
             setIsGenerating(false);
         }
@@ -194,12 +161,11 @@ export default function NeoStudioPage() {
         const text = textInput?.value;
 
         if (!text || !text.trim()) {
-            addOutput('Please enter text to generate audio for', 'warning');
+            console.warn('Please enter text to generate audio for');
             return;
         }
 
         setIsGenerating(true);
-        addOutput('Generating AI voice for download...', 'info');
 
         try {
             const voice = getSelectedVoice();
@@ -211,13 +177,11 @@ export default function NeoStudioPage() {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                addOutput('Voice downloaded as speech.wav', 'success');
             } else {
                 throw new Error('No audio data received from AI.');
             }
         } catch (error: any) {
             console.error('Error downloading voice:', error);
-            addOutput(`Error: ${error.message || 'Could not generate audio.'}`, 'error');
         } finally {
             setIsGenerating(false);
         }
@@ -228,13 +192,12 @@ export default function NeoStudioPage() {
         const prompt = promptInput?.value;
 
         if (!prompt || !prompt.trim()) {
-            addOutput('Please enter an image description', 'warning');
+            console.warn('Please enter an image description');
             return;
         }
 
         const finalPrompt = `${prompt}, ${imageStyle} style`;
         setIsGenerating(true);
-        addOutput(`Generating image: "${finalPrompt}"`, 'info');
 
         const canvas = document.getElementById('imageCanvas');
         if (!canvas) {
@@ -248,13 +211,11 @@ export default function NeoStudioPage() {
             const response = await generateImageFlow({ prompt: finalPrompt });
             if (response.url) {
                 canvas.innerHTML = `<img src="${response.url}" alt="Generated Image" style="width: 100%; border-radius: var(--radius-md);">`;
-                addOutput('Image generated successfully', 'success');
             } else {
                 throw new Error('No image data received from AI.');
             }
         } catch (error: any) {
             console.error('Error generating image:', error);
-            addOutput(`Error: ${error.message || 'Could not generate image.'}`, 'error');
             canvas.innerHTML = `<i class="fas fa-image" style="font-size: 48px; color: var(--gray);"></i>`;
         } finally {
             setIsGenerating(false);
@@ -269,13 +230,6 @@ export default function NeoStudioPage() {
         { id: 'voiceover', icon: 'fa-microphone-alt', title: 'Voice on Video', desc: 'Add voiceovers to videos' },
     ];
     
-    const outputColors = {
-        info: 'var(--primary)',
-        success: 'var(--secondary)',
-        warning: 'var(--accent)',
-        error: 'var(--danger)'
-    };
-
     const imageStyles = ['Realistic', 'Anime', 'Cyberpunk', 'Fantasy'];
 
     const PlaceholderModule = ({ icon, title }: { icon: string, title: string }) => (
@@ -411,26 +365,6 @@ export default function NeoStudioPage() {
                         {activeModule === 'video' && <PlaceholderModule icon="fa-video" title="Text to Video" />}
                         {activeModule === 'edit' && <PlaceholderModule icon="fa-edit" title="Photo Editing" />}
                         {activeModule === 'voiceover' && <PlaceholderModule icon="fa-microphone-alt" title="Voice on Video" />}
-                    </div>
-
-                    <div className="neural-output">
-                        <div className="output-header">
-                            <h3>AI Output</h3>
-                            <button className="neural-btn" onClick={clearOutput} style={{ padding: '8px 15px', fontSize: '14px' }}>
-                                <i className="fas fa-trash"></i> Clear
-                            </button>
-                        </div>
-                        <div className="output-list" id="outputList">
-                           {outputs.map(out => (
-                             <div key={out.id} className="output-item" style={{ borderLeftColor: outputColors[out.type] }}>
-                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                 <strong style={{ color: outputColors[out.type] }}>{out.type.toUpperCase()}</strong>
-                                 <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>{out.time}</span>
-                               </div>
-                               <p style={{ color: 'var(--gray)', margin: '5px 0 0' }}>{out.message}</p>
-                             </div>
-                           ))}
-                        </div>
                     </div>
                 </div>
             </main>

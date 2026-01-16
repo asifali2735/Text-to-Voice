@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { textToSpeech } from '@/ai/flows/speech';
 import { generateImage as generateImageFlow } from '@/ai/flows/image';
 
-type ModuleName = 'speech-highlight' | 'image' | 'video' | 'edit' | 'voiceover' | 'code' | 'music';
+type ModuleName = 'speech-highlight' | 'image' | 'video' | 'edit' | 'voiceover';
 
 type OutputMessage = {
     id: number;
@@ -267,8 +267,6 @@ export default function NeoStudioPage() {
         { id: 'video', icon: 'fa-video', title: 'Text to Video', desc: 'Generate videos from text' },
         { id: 'edit', icon: 'fa-edit', title: 'Photo Editing', desc: 'AI-powered photo editing' },
         { id: 'voiceover', icon: 'fa-microphone-alt', title: 'Voice on Video', desc: 'Add voiceovers to videos' },
-        { id: 'code', icon: 'fa-code', title: 'Code Generation', desc: 'Generate code from prompts' },
-        { id: 'music', icon: 'fa-music', title: 'AI Music Generator', desc: 'Create music from text' },
     ];
     
     const outputColors = {
@@ -413,8 +411,6 @@ export default function NeoStudioPage() {
                         {activeModule === 'video' && <PlaceholderModule icon="fa-video" title="Text to Video" />}
                         {activeModule === 'edit' && <PlaceholderModule icon="fa-edit" title="Photo Editing" />}
                         {activeModule === 'voiceover' && <PlaceholderModule icon="fa-microphone-alt" title="Voice on Video" />}
-                        {activeModule === 'code' && <PlaceholderModule icon="fa-code" title="Code Generation" />}
-                        {activeModule === 'music' && <PlaceholderModule icon="fa-music" title="AI Music Generator" />}
                     </div>
 
                     <div className="neural-output">

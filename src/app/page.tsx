@@ -16,6 +16,7 @@ export default function NeoStudioPage() {
     const [activeModule, setActiveModule] = useState<ModuleName>('speech-highlight');
     const [outputs, setOutputs] = useState<OutputMessage[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [imageStyle, setImageStyle] = useState('Cyberpunk');
     const appContainerRef = useRef<HTMLDivElement>(null);
     const cyberLoaderRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -231,8 +232,9 @@ export default function NeoStudioPage() {
             return;
         }
 
+        const finalPrompt = `${prompt}, ${imageStyle} style`;
         setIsGenerating(true);
-        addOutput(`Generating image: "${prompt}"`, 'info');
+        addOutput(`Generating image: "${finalPrompt}"`, 'info');
 
         const canvas = document.getElementById('imageCanvas');
         if (!canvas) {
@@ -243,7 +245,7 @@ export default function NeoStudioPage() {
         canvas.innerHTML = '<div style="text-align: center;"><div class="spinner"></div><p style="color: var(--gray); margin-top: 10px;">Generating AI image...</p></div>';
 
         try {
-            const response = await generateImageFlow({ prompt });
+            const response = await generateImageFlow({ prompt: finalPrompt });
             if (response.url) {
                 canvas.innerHTML = `<img src="${response.url}" alt="Generated Image" style="width: 100%; border-radius: var(--radius-md);">`;
                 addOutput('Image generated successfully', 'success');
@@ -261,14 +263,11 @@ export default function NeoStudioPage() {
 
     const projectAction = (action: 'save' | 'export' | 'runAll') => {
         const messages = {
-            save: { start: 'Saving project...', end: 'Project saved to cloud storage' },
-            export: { start: 'Exporting project files...', end: 'Project exported successfully' },
-            runAll: { start: 'Running all AI modules in sequence...', end: 'All AI processes completed' }
+            save: 'This is a placeholder. A full implementation would save your work to a cloud database.',
+            export: 'This is a placeholder. A full implementation would package your project files for download.',
+            runAll: 'This is a placeholder. A full implementation would run a sequence of AI tasks you define.'
         };
-        addOutput(messages[action].start, 'info');
-        setTimeout(() => {
-            addOutput(messages[action].end, 'success');
-        }, 2000);
+        addOutput(messages[action], 'warning');
     };
 
     const modules: { id: ModuleName; icon: string; title: string; desc: string }[] = [
@@ -287,6 +286,8 @@ export default function NeoStudioPage() {
         warning: 'var(--accent)',
         error: 'var(--danger)'
     };
+
+    const imageStyles = ['Realistic', 'Anime', 'Cyberpunk', 'Fantasy'];
 
     const PlaceholderModule = ({ icon, title }: { icon: string, title: string }) => (
       <div className="module-content active">
@@ -367,19 +368,9 @@ export default function NeoStudioPage() {
                                             <option value="cartoon">Cartoon</option>
                                             <option value="robotic">Robotic</option>
                                         </select>
-                                        <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Emotion</label>
-                                        <input type="range" className="neural-slider" id="emotionSlider" min="0" max="100" defaultValue="50" />
-                                        <label style={{ display: 'block', margin: '20px 0 10px', color: 'var(--gray)' }}>Speed</label>
-                                        <input type="range" className="neural-slider" id="speedSlider" min="0.5" max="2" step="0.1" defaultValue="1" />
                                     </div>
                                     <div className="control-panel">
-                                        <h3 className="control-title"><i className="fas fa-highlighter"></i> Highlight Settings</h3>
-                                        <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Highlight Style</label>
-                                        <select style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white', marginBottom: '20px' }}>
-                                            <option>Karaoke</option>
-                                            <option>Word by Word</option>
-                                            <option>Full Sentence</option>
-                                        </select>
+                                        <h3 className="control-title"><i className="fas fa-cogs"></i> Actions</h3>
                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
                                             <button className="neural-btn" onClick={generateAndPlaySpeech} style={{ padding: '12px' }} disabled={isGenerating}>
                                                 {isGenerating ? <div className="spinner" style={{width: '20px', height: '20px', margin: 0}}></div> : <><i className="fas fa-play"></i> Generate Speech</>}
@@ -405,18 +396,23 @@ export default function NeoStudioPage() {
                                      <div className="control-panel">
                                          <h3 className="control-title"><i className="fas fa-palette"></i> Style Settings</h3>
                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                             <button className="neural-btn" style={{ padding: '10px' }}>Realistic</button>
-                                             <button className="neural-btn" style={{ padding: '10px' }}>Anime</button>
-                                             <button className="neural-btn" style={{ padding: '10px' }}>Cyberpunk</button>
-                                             <button className="neural-btn" style={{ padding: '10px' }}>Fantasy</button>
+                                             {imageStyles.map(style => (
+                                                <button
+                                                    key={style}
+                                                    className={`neural-btn ${imageStyle === style ? 'secondary' : ''}`}
+                                                    style={{ padding: '10px' }}
+                                                    onClick={() => setImageStyle(style)}
+                                                >
+                                                    {style}
+                                                </button>
+                                             ))}
                                          </div>
                                      </div>
                                      <div className="control-panel">
-                                         <h3 className="control-title"><i className="fas fa-cogs"></i> Advanced</h3>
-                                         <label style={{ display: 'block', marginBottom: '10px', color: 'var(--gray)' }}>Resolution</label>
-                                         <select style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: 'white' }}>
-                                             <option>512x512</option><option>768x768</option><option>1024x1024</option><option>2048x2048</option>
-                                         </select>
+                                         <h3 className="control-title"><i className="fas fa-cogs"></i> Actions</h3>
+                                         <button className="neural-btn large" onClick={generateImage} style={{ width: '100%' }} disabled={isGenerating}>
+                                             {isGenerating ? <div className="spinner" style={{width: '20px', height: '20px', margin: 0}}></div> : <><i className="fas fa-magic"></i> Generate Image</>}
+                                         </button>
                                      </div>
                                  </div>
                                  <div className="preview-area">
@@ -426,9 +422,6 @@ export default function NeoStudioPage() {
                                          </div>
                                      </div>
                                  </div>
-                                 <button className="neural-btn large" onClick={generateImage} style={{ width: '100%' }} disabled={isGenerating}>
-                                     {isGenerating ? <div className="spinner" style={{width: '20px', height: '20px', margin: 0}}></div> : <><i className="fas fa-magic"></i> Generate Image</>}
-                                 </button>
                              </div>
                         )}
                         {activeModule === 'video' && <PlaceholderModule icon="fa-video" title="Text to Video" />}
